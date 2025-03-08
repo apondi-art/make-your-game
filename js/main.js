@@ -15,6 +15,10 @@ document.addEventListener("DOMContentLoaded", function () {
         // TO DO Add additional quit logic here when implementing game loop
     };
 
+    const handleResume = () => {
+        console.log("Game resume");
+        // TO Do add additional resume logic here when implementing game loop
+    }
     const pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit);
 
     console.log(gameBoard.board.classList);
