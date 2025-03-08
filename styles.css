@@ -1,8 +1,24 @@
-
-
-.grid{
-    background-color: blue;
+body {
+    background-color: #1e1e2e;  
+    display: flex;             
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
 }
-body{
-    background-color: red;
+
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(10, 30px);
+    grid-template-rows: repeat(20, 30px);
+    gap: 1px;
+    background-color: #282a36;    
+}
+
+.cell {
+    width: 30px;
+    height: 30px;
+    background-color: #44475a;  
+    border: 1px solid #6272a4; 
 }
