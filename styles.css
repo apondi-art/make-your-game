@@ -3,6 +3,12 @@
 .grid{
     background-color: blue;
 }
-body{
-    background-color: red;
+body {
+    background-color: #1e1e2e;  
+    display: flex;             
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
 }
+
