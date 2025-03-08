@@ -16,4 +16,9 @@ body {
     background-color: #282a36;    
 }
 
-
+.cell {
+    width: 30px;
+    height: 30px;
+    background-color: #44475a;  
+    border: 1px solid #6272a4; 
+}
