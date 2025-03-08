@@ -1,6 +1,7 @@
 body {
     background-color: #1e1e2e;  
-    display: flex;             
+    display: flex; 
+    flex-direction: row;            
     justify-content: center;
     align-items: center;
     height: 100vh;
@@ -21,4 +22,24 @@ body {
     height: 30px;
     background-color: #44475a;  
     border: 1px solid #6272a4; 
+}
+
+
+#pauseBtn {
+    margin-left: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border:1;
+    border-radius: 8px;
+    border-color: #6272a4;
+    background-color: #6272a4;
+    color: white;
+    cursor: pointer;
+    position: relative;
+    margin-top: 583px;
+}
+
+#pauseBtn:hover {
+    background-color: #50fa7b;
+    color:#1e1e2e;
 }
