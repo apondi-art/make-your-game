@@ -1,8 +1,10 @@
 import { GameBoard } from './gameBoard.js';
 import { PauseMenu } from './pauseMenu.js';
-import{createTetrimino} from './tetrominoes.js';
+import { initStartButton } from './start.js';
+// import{createTetrimino} from './tetrominoes.js';
 
 document.addEventListener("DOMContentLoaded", function () {
+    initStartButton();
     const gameBoard = new GameBoard();
 
     // Callback functions for restart and quit
