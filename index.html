@@ -7,18 +7,30 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="game-board" class="board">
-        <div id="startOverlay" class="start-overlay">
-            <button id="startBtn">Start</button>
-        </div>
-        <div id="pauseMenu" class="pause-menu">
-            <div class="pause-content">
-                <button id="restartBtn">Restart</button>
-                <button id="quitBtn">Quit</button>
+    <div class="game-container">
+        <div id="game-board" class="board">
+            <div id="startOverlay" class="start-overlay">
+                <button id="startBtn">Start</button>
+            </div>
+            <div id="pauseMenu" class="pause-menu">
+                <div class="pause-content">
+                    <button id="restartBtn">Restart</button>
+                    <button id="quitBtn">Quit</button>
+                </div>
             </div>
         </div>
+        <div class="sidebar">
+            <div class="score-board">
+                <div>Score: <span id="score">0</span></div>
+                <div>Lines: <span id="lines">0</span></div>
+            </div>
+            <div class="next-piece" id="nextPiece">
+                <!-- Next piece will be rendered here -->
+                Next Piece
+            </div>
+            <button id="pauseBtn">Pause</button>
+        </div>
     </div>
-    <button id="pauseBtn">Pause</button>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
