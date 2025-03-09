@@ -1,4 +1,4 @@
-body {
+cssbody {
     background-image: url("../images/plastic.jpg");
     background-color: #1e1e2e;  
     background-size: cover;     
@@ -214,4 +214,31 @@ body {
     .next-piece {
         width: 100%;
     }
+}
+.active.cyan {
+    background-color: cyan;
+}
+
+.active.blue {
+    background-color: blue;
+}
+
+.active.orange {
+    background-color: orange;
+}
+
+.active.yellow {
+    background-color: yellow;
+}
+
+.active.green {
+    background-color: green;
+}
+
+.active.red {
+    background-color: red;
+}
+
+.active.purple {
+    background-color: purple;
 }
