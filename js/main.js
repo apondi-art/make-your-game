@@ -1,5 +1,6 @@
 import { GameBoard } from './gameBoard.js';
 import { PauseMenu } from './pauseMenu.js';
+import{createTetrimino} from './tetrominoes.js';
 
 document.addEventListener("DOMContentLoaded", function () {
     const gameBoard = new GameBoard();
@@ -23,3 +24,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log(gameBoard.board.classList);
 });
+
