@@ -1,17 +1,16 @@
-cssbody {
+body {
     background-image: url("../images/plastic.jpg");
-    background-color: #1e1e2e;  
-    background-size: cover;     
+    background-color: #1e1e2e;
+    background-size: cover;
     background-repeat: no-repeat;
-    background-position: center; 
+    background-position: center;
     display: flex;
-    flex-direction: row;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
+    padding: 0;
 }
-
 
 .board {
     display: grid;
@@ -23,6 +22,7 @@ cssbody {
     height: min(80vh, 619px);
     position: relative;
     overflow: hidden;
+    margin: 0 auto;
 }
 
 .cell {
@@ -31,6 +31,11 @@ cssbody {
     background-color: #44475a;
     border: 1px solid #6272a4;
     box-sizing: border-box;
+}
+
+/* Hide tetrominoes by default */
+.cell.active {
+    background-color: #44475a;
 }
 
 .pause-toggle {
@@ -45,9 +50,9 @@ cssbody {
     background-color: #6272a4;
     color: white;
     cursor: pointer;
-    width: 100%; 
+    width: 100%;
     box-sizing: border-box;
-    display: none; 
+    display: none;
 }
 
 #pauseBtn:hover {
@@ -124,13 +129,14 @@ cssbody {
     flex-direction: row;
     align-items: flex-start;
     gap: 20px;
+    justify-content: center;
 }
 
 .sidebar {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    width: 100px; /* Fixed width for alignment */
+    width: 100px;
 }
 
 .score-board {
@@ -155,8 +161,8 @@ cssbody {
     background: #44475a;
     border: 1px solid #6272a4;
     border-radius: 8px;
-    width: 100%; 
-    height: 100px; 
+    width: 100%;
+    height: 100px;
     box-sizing: border-box;
     display: flex;
     justify-content: center;
@@ -164,6 +170,35 @@ cssbody {
     color: white;
     font-family: Arial, sans-serif;
     font-size: 14px;
+}
+
+/* Only show tetrominoes when game is started */
+.board.started .cell.active.cyan {
+    background-color: cyan;
+}
+
+.board.started .cell.active.blue {
+    background-color: blue;
+}
+
+.board.started .cell.active.orange {
+    background-color: orange;
+}
+
+.board.started .cell.active.yellow {
+    background-color: yellow;
+}
+
+.board.started .cell.active.green {
+    background-color: green;
+}
+
+.board.started .cell.active.red {
+    background-color: red;
+}
+
+.board.started .cell.active.purple {
+    background-color: purple;
 }
 
 /* Media Queries */
@@ -176,7 +211,7 @@ cssbody {
         align-items: center;
     }
     .sidebar {
-        width: min(90vw, 300px); /* Match board width on mobile */
+        width: min(90vw, 300px);
         align-items: center;
     }
     #pauseBtn {
@@ -214,31 +249,4 @@ cssbody {
     .next-piece {
         width: 100%;
     }
-}
-.active.cyan {
-    background-color: cyan;
-}
-
-.active.blue {
-    background-color: blue;
-}
-
-.active.orange {
-    background-color: orange;
-}
-
-.active.yellow {
-    background-color: yellow;
-}
-
-.active.green {
-    background-color: green;
-}
-
-.active.red {
-    background-color: red;
-}
-
-.active.purple {
-    background-color: purple;
 }
