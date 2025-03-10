@@ -1,13 +1,16 @@
 export class PauseMenu {
-    constructor(gameBoard, onRestart, onQuit) {
+    constructor(gameBoard, onRestart, onQuit, onPause, onResume) {
         this.pauseBtn = document.getElementById("pauseBtn");
         this.pauseMenu = document.getElementById("pauseMenu");
         this.restartBtn = document.getElementById("restartBtn");
         this.quitBtn = document.getElementById("quitBtn");
+        this.continueBtn = document.getElementById("continueBtn");
         this.gameBoard = gameBoard;
         this.isPaused = false;
         this.onRestart = onRestart;
         this.onQuit = onQuit;
+        this.onPause = onPause;    // Pause callback
+        this.onResume = onResume;  // Resume callback
         this.initEvents();
     }
 
@@ -15,6 +18,12 @@ export class PauseMenu {
         this.isPaused = !this.isPaused;
         this.pauseMenu.style.display = this.isPaused ? "flex" : "none";
         this.pauseBtn.textContent = this.isPaused ? "Resume" : "Pause";
+        
+        if (this.isPaused) {
+            this.onPause();  // Stop frame generation
+        } else {
+            this.onResume(); // Resume frame generation
+        }
     }
 
     initEvents() {
