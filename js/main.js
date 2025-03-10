@@ -1,29 +1,67 @@
 import { GameBoard } from './gameBoard.js';
 import { PauseMenu } from './pauseMenu.js';
 import { initStartButton } from './start.js';
-// import{createTetrimino} from './tetrominoes.js';
+import { GenerateRandom, renderTeromino, rotateTetrimino, eraseTetrimino, moveDown } from './tetrominoes.js';
+
+let cells;
+let currentTetrimino;
+let gameBoardElement;
 
 document.addEventListener("DOMContentLoaded", function () {
-    initStartButton();
     const gameBoard = new GameBoard();
+    gameBoardElement = document.getElementById("game-board"); 
+
+   
+    cells = Array.from(document.querySelectorAll(".cell"));
+    console.log("Cells:", cells.length); 
+
+    
+    currentTetrimino = GenerateRandom();
+    console.log("Initial Tetrimino:", currentTetrimino); 
+    // Function to start the game
+    const startGame = () => {
+        gameBoardElement.classList.add("started"); 
+        rotateTetrimino(cells); 
+        console.log("Game started");
+    };
+
+   
+    initStartButton(startGame);
+
+    // Add event listeners
+    document.addEventListener("keydown", (event) => {
+        console.log("Key Pressed:", event.key);
+    
+        if (event.key === "ArrowUp") {
+            console.log("Generating New Tetrimino and Rotating...");
+            eraseTetrimino(cells, currentTetrimino); 
+            currentTetrimino = GenerateRandom(); 
+            rotateTetrimino(cells)
+        }
+    });
 
     // Callback functions for restart and quit
     const handleRestart = () => {
         console.log("Game restarted");
-        // TO DO additional restart logic here when implementing game loop
+        gameBoardElement.classList.remove("started");
+        eraseTetrimino(cells, currentTetrimino);
+        currentTetrimino = GenerateRandom();
+        // Additional restart logic can be added here
     };
 
     const handleQuit = () => {
         console.log("Game quit");
-        // TO DO Add additional quit logic here when implementing game loop
+        gameBoardElement.classList.remove("started");
+        eraseTetrimino(cells, currentTetrimino);
+        document.getElementById("startOverlay").style.display = "flex"; // Show start overlay again
+        document.getElementById("pauseBtn").style.display = "none"; // Hide pause button
+        // Additional quit logic can be added here
     };
 
     const handleResume = () => {
-        console.log("Game resume");
-        // TO Do add additional resume logic here when implementing game loop
-    }
+        console.log("Game resumed");
+        // TO DO Additional resume logic can be added here
+    };
+
     const pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit);
-
-    console.log(gameBoard.board.classList);
 });
-
