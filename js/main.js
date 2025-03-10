@@ -1,7 +1,7 @@
 import { GameBoard } from './gameBoard.js';
 import { PauseMenu } from './pauseMenu.js';
 import { initStartButton } from './start.js';
-import { GenerateRandom, renderTeromino, rotateTetrimino, eraseTetrimino, moveDown, moveLeft, moveRight, currentTetrimino } from './tetrominoes.js';
+import { GenerateRandom, renderTeromino, rotateTetrimino, moveDown, moveRight, moveLeft, currentTetrimino } from './tetrominoes.js';
 
 let cells;
 let gameBoardElement;
