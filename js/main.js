@@ -6,6 +6,9 @@ import { GenerateRandom, renderTeromino, rotateTetrimino, eraseTetrimino, moveDo
 let cells;
 let currentTetrimino;
 let gameBoardElement;
+let lastTime = 0;
+const dropInterval = 500;
+let dropCounter = 0;
 
 document.addEventListener("DOMContentLoaded", function () {
     const gameBoard = new GameBoard();
@@ -23,6 +26,24 @@ document.addEventListener("DOMContentLoaded", function () {
         gameBoardElement.classList.add("started"); 
         rotateTetrimino(cells); 
         console.log("Game started");
+
+
+        const gameLoop = (time = 0) => {
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            dropCounter += deltaTime;
+    
+            if (dropCounter > dropInterval) {
+                eraseTetrimino(cells, currentTetrimino);  // Erase current position
+                moveDown(cells, currentTetrimino);        // Move down by one step
+                renderTeromino(cells, currentTetrimino);  // Render at new position
+                dropCounter = 0;  // Reset drop counter
+            }
+    
+            requestAnimationFrame(gameLoop); // Call gameLoop again for the next frame
+        };
+    
+        requestAnimationFrame(gameLoop);  // Start the game loop
     };
 
    
