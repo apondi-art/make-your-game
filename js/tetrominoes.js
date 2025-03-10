@@ -1,3 +1,5 @@
+import {Score} from './score.js';
+
 const width = 10;
 
 const TETRIMINOES = {
@@ -50,12 +52,20 @@ export function renderTeromino(cells) {
 }
 
 export function rotateTetrimino(cells) {
-    eraseTetrimino(cells);
-    if (currentTetrimino.shape.length > 1) {
-        currentTetrimino.rotation = (currentTetrimino.rotation + 1) % currentTetrimino.shape.length;
+    if (canMoveLeft(cells) && canMoveRight(cells)){
+        eraseTetrimino(cells);
+        if (currentTetrimino.shape.length > 1) {
+            currentTetrimino.rotation = (currentTetrimino.rotation + 1) % currentTetrimino.shape.length;
+        }
+        renderTeromino(cells);
+    } else {
+        moveDown(cells)
     }
-    renderTeromino(cells);
+   
 }
+
+
+
 
 export function moveDown(cells) {
     if (canMoveDown(cells)) {
@@ -79,26 +89,74 @@ export function moveDown(cells) {
     }
 }
 
-export function moveLeft(cells){
-  eraseTetrimino(cells)
-  currentTetrimino.position += 1;
-  renderTeromino(cells);
-  return true;
+export function moveRight(cells) {
+    if (canMoveRight(cells)) {
+        eraseTetrimino(cells);
+        console.log(currentTetrimino.position);
+        currentTetrimino.position += 1; // Move right by one step
+        renderTeromino(cells);
+        return true;
+    } else {
+       moveDown(cells)
+        return true;
+    }
 }
 
-export function moveRight(cells){
-  eraseTetrimino(cells)
-  currentTetrimino.position -= 1;
-  renderTeromino(cells);
-  return true;
+
+
+export function moveLeft(cells) {
+    if (canMoveLeft(cells)) {
+        eraseTetrimino(cells);
+        console.log(currentTetrimino.position);
+        currentTetrimino.position -= 1; // Move right by one step
+        renderTeromino(cells);
+        return true;
+    } else {
+       moveDown(cells)
+        return true;
+    }
 }
+
+
+function canMoveLeft(cells) {
+    const gridWidth = 10;
+    return currentTetrimino.shape[currentTetrimino.rotation].every(index => {
+        const currentPos = currentTetrimino.position + index;
+        const currentColumn = currentPos % gridWidth;
+        const newPosition = currentPos - 1;
+        
+        return (
+            currentColumn > 0 &&  // Ensure it doesn't go past right edge
+            newPosition < cells.length &&                    
+            !cells[newPosition]?.classList.contains("occupied")
+        );
+    });
+}
+
+
+function canMoveRight(cells) {
+    const gridWidth = 10;
+    return currentTetrimino.shape[currentTetrimino.rotation].every(index => {
+        const currentPos = currentTetrimino.position + index;
+        const currentColumn = currentPos % gridWidth;
+        const newPosition = currentPos + 1;
+        
+        return (
+            currentColumn < gridWidth - 1 &&  // Ensure it doesn't go past right edge
+            newPosition < cells.length &&                    
+            !cells[newPosition]?.classList.contains("occupied")
+        );
+    });
+}
+
 
 
 function canMoveDown(cells) {
+    const gridWidth = 10;
     return currentTetrimino.shape[currentTetrimino.rotation].every(index => {
-        const newPosition = currentTetrimino.position + index + 10;
+        const newPosition = currentTetrimino.position + index + gridWidth; // Move down one row
         return (
-            newPosition < cells.length &&                    
+            newPosition < cells.length &&
             !cells[newPosition]?.classList.contains("occupied")
         );
     });
@@ -118,24 +176,43 @@ function canPlaceNewTetrimino(cells) {
     });
 }
 
+
+
+
+
 function clearFullRows(cells) {
     const rows = cells.length / 10;
+    let linesCleared = 0; 
+
     for (let row = rows - 1; row >= 0; row--) {
         const start = row * 10;
         const end = start + 10;
         const isFull = cells.slice(start, end).every(cell => cell.classList.contains("occupied"));
+
         if (isFull) {
+            linesCleared++; // Increment the count of cleared lines
+
+            // Shift down rows above the cleared row
             for (let i = start - 1; i >= 0; i--) {
                 cells[i + 10].className = cells[i].className;
                 cells[i + 10].style.backgroundColor = cells[i].style.backgroundColor;
             }
+
+            // Clear the top row
             for (let i = 0; i < 10; i++) {
                 cells[i].className = "cell";
                 cells[i].style.backgroundColor = "";
             }
-            row++;
+
+            row++; // Recheck the same row after clearing
         }
     }
+
+    // Update score and lines cleared if any rows were removed
+    if (linesCleared > 0) {
+        Score.addScore(linesCleared);
+    }
 }
+
 
 export default TETRIMINOES;
