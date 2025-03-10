@@ -14,21 +14,24 @@ const TETRIMINOES = {
                  [width, width + 1, width + 2, width * 2 + 1], [1, width, width + 1, width * 2]], color: "purple" }
 };
 
-// Function to generate a random Tetrimino - KEEPING ORIGINAL CAPITALIZATION
+// Variable for the current Tetrimino - exported for access from main.js
+export let currentTetrimino;
+
+// Function to generate a random Tetrimino
 export function GenerateRandom() {
     const keys = Object.keys(TETRIMINOES);  // Get Tetrimino names ["I", "J", "L", "O", "S", "Z", "T"]
     const randomKey = keys[Math.floor(Math.random() * keys.length)]; // Select a random one
 
-    return { 
+    currentTetrimino = { 
         shape: TETRIMINOES[randomKey].shape, // Get the shape data
         name: randomKey, // Store the name of the Tetrimino
         color: TETRIMINOES[randomKey].color, // Assign the color
         rotation: 0, // Start at the default rotation
         position: 4 // Spawn near the center of the grid
     };
+    
+    return currentTetrimino;
 }
-
-let currentTetrimino = GenerateRandom(); // Store the currently active Tetrimino
 
 // Function to erase the Tetrimino from the grid before redrawing
 export function eraseTetrimino(cells) {
@@ -42,7 +45,7 @@ export function eraseTetrimino(cells) {
     });
 }
 
-// KEEPING ORIGINAL FUNCTION NAME WITH TYPO for compatibility
+// Keep original function name with typo for compatibility
 export function renderTeromino(cells) {
     console.log("Rendering Tetrimino"); // Debugging line
     eraseTetrimino(cells); // Clear previous position
@@ -79,8 +82,9 @@ export function moveDown(cells) {
       eraseTetrimino(cells);            // Remove old position
       currentTetrimino.position += 10;  // Move down
       renderTeromino(cells);            // Call with original typo
+      return true; // Indicate successful movement
   } else {
-      // Lock the Tetrimino in place if it can't move down
+      // 🟢 Lock the Tetrimino in place if it can't move down
       currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
           const pos = currentTetrimino.position + index;
           if (cells[pos]) {
@@ -89,20 +93,20 @@ export function moveDown(cells) {
           }
       });
 
-     
+      // 🟢 Check for full rows to clear them
       clearFullRows(cells);
-
-    
-      currentTetrimino = GenerateRandom();
-
       
-      if (!canMoveDown(cells)) {
+      // Check if we have space for a new Tetrimino
+      if (!canPlaceNewTetrimino(cells)) {
           console.log("Game Over!");
-         
-          return;
+          return false; // Indicate game over
       }
+      
+      // 🟢 Generate a new Tetrimino
+      GenerateRandom(); // Create a new Tetrimino and update currentTetrimino
 
       renderTeromino(cells); // Call with original typo
+      return true; // Indicate successful spawn of new Tetrimino
   }
 }
 
@@ -112,17 +116,37 @@ function canMoveDown(cells) {
 
       // Check if new position is within grid bounds and not occupied
       return (
-          newPosition < cells.length &&                    
-          !cells[newPosition]?.classList.contains("occupied") 
+          newPosition < cells.length &&                    // 🟢 Within grid
+          !cells[newPosition]?.classList.contains("occupied") // 🟢 Not occupied
+      );
+  });
+}
+
+// New function to check if a new Tetrimino can be placed
+function canPlaceNewTetrimino(cells) {
+  // Check if the spawn area is clear
+  const spawnPosition = 4; // The default spawn position
+  
+  // Generate a new Tetrimino without updating the current one
+  const keys = Object.keys(TETRIMINOES);
+  const randomKey = keys[Math.floor(Math.random() * keys.length)];
+  const shape = TETRIMINOES[randomKey].shape[0]; // Use the default rotation
+  
+  // Check if all cells in the shape would be free
+  return shape.every(index => {
+      const position = spawnPosition + index;
+      return (
+          position < cells.length &&
+          !cells[position]?.classList.contains("occupied")
       );
   });
 }
 
 function clearFullRows(cells) {
-  const rows = cells.length / 10; 
+  const rows = cells.length / 10; // Assuming grid width is 10
   let clearedRows = 0; // Track how many rows were cleared
 
-  for (let row = rows - 1; row >= 0; row--) {
+  for (let row = rows - 1; row >= 0; row--) { // Start from the bottom row
       const start = row * 10;
       const end = start + 10;
 
@@ -140,7 +164,7 @@ function clearFullRows(cells) {
 
           // Clear the topmost row after shifting
           for (let i = 0; i < 10; i++) {
-              cells[i].className = "cell"; 
+              cells[i].className = "cell"; // Reset top row to default cell class
               cells[i].style.backgroundColor = ""; // Reset color
           }
 
