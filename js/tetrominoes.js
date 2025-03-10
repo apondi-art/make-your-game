@@ -1,17 +1,15 @@
 const width = 10;
 
 const TETRIMINOES = {
-    I: { shape: [[1, width + 1, width * 2 + 1, width * 3 + 1], [width, width + 1, width + 2, width + 3]], color: "cyan" },
-    J: { shape: [[1, 2, 2 + width, 2 + width * 2], [width, width + 1, width + 2, 2], 
-                 [0, width, width * 2, 1 + width * 2], [width, width + 1, width + 2, width * 2]], color: "blue" },
-    L: { shape: [[0, 1, 1 + width, 1 + width * 2], [width, width + 1, width + 2, 2 + width], 
-                 [1, width + 1, width * 2 + 1, width * 2], [width, width + 1, width + 2, 0]], color: "orange" },
-    O: { shape: [[0, 1, width, width + 1]], color: "yellow" },
-    S: { shape: [[1, 2, width, width + 1], [0, width, width + 1, width * 2 + 1]], color: "green" },
-    Z: { shape: [[0, 1, width + 1, width + 2], [1, width, width + 1, width * 2]], color: "red" },
-    T: { shape: [[1, width, width + 1, width + 2], [1, width + 1, width + 2, width * 2 + 1], 
-                 [width, width + 1, width + 2, width * 2 + 1], [1, width, width + 1, width * 2]], color: "purple" }
+  I: { shape: [[1, width + 1, width * 2 + 1, width * 3 + 1], [width, width + 1, width + 2, width + 3]], color: "cyan" },
+  J: { shape: [[1, 2, 2 + width, 2 + width * 2], [width, width + 1, width + 2, 2], [0, width, width * 2, 1 + width * 2], [width, width + 1, width + 2, width * 2]], color: "blue" },
+  L: { shape: [[0, 1, 1 + width, 1 + width * 2], [width, width + 1, width + 2, 2], [1, width + 1, width * 2, width*2 + 1],  [width, width + 1, width + 2, 0]], color: "orange" },
+  O: { shape: [[0, 1, width, width + 1]], color: "yellow" },
+  S: { shape: [[1, 2, width, width + 1], [0, width, width + 1, width * 2 + 1]], color: "green" },
+  Z: { shape: [[0, 1, width + 1, width + 2], [1, width, width + 1, width * 2]], color: "red" },
+  T: { shape: [[1, width, width + 1, width + 2], [1, width + 1, width + 2, width * 2 + 1], [width, width + 1, width + 2, width * 2 + 1], [1, width, width + 1, width * 2]], color: "purple" }
 };
+
 
 export let currentTetrimino;
 
@@ -80,6 +78,21 @@ export function moveDown(cells) {
         return true;
     }
 }
+
+export function moveLeft(cells){
+  eraseTetrimino(cells)
+  currentTetrimino.position += 1;
+  renderTeromino(cells);
+  return true;
+}
+
+export function moveRight(cells){
+  eraseTetrimino(cells)
+  currentTetrimino.position -= 1;
+  renderTeromino(cells);
+  return true;
+}
+
 
 function canMoveDown(cells) {
     return currentTetrimino.shape[currentTetrimino.rotation].every(index => {
