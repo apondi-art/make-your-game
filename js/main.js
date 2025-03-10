@@ -1,7 +1,7 @@
 import { GameBoard } from './gameBoard.js';
 import { PauseMenu } from './pauseMenu.js';
 import { initStartButton } from './start.js';
-import { GenerateRandom, renderTeromino, rotateTetrimino, eraseTetrimino, moveDown, currentTetrimino } from './tetrominoes.js';
+import { GenerateRandom, renderTeromino, rotateTetrimino, eraseTetrimino, moveDown, moveLeft, moveRight, currentTetrimino } from './tetrominoes.js';
 
 let cells;
 let gameBoardElement;
@@ -64,6 +64,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event.key === "ArrowUp") {
       rotateTetrimino(cells);
     }
+
+    if (event.key === "ArrowLeft") {
+        moveLeft(cells)
+    }
+    if (event.key === "ArrowRight") {
+        moveRight(cells)
+    }
+
     // You can add more controls here
   });
   
