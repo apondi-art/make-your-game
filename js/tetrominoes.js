@@ -14,7 +14,7 @@ const TETRIMINOES = {
                  [width, width + 1, width + 2, width * 2 + 1], [1, width, width + 1, width * 2]], color: "purple" }
 };
 
-// Function to generate a random Tetrimino
+// Function to generate a random Tetrimino - KEEPING ORIGINAL CAPITALIZATION
 export function GenerateRandom() {
     const keys = Object.keys(TETRIMINOES);  // Get Tetrimino names ["I", "J", "L", "O", "S", "Z", "T"]
     const randomKey = keys[Math.floor(Math.random() * keys.length)]; // Select a random one
@@ -34,16 +34,25 @@ let currentTetrimino = GenerateRandom(); // Store the currently active Tetrimino
 export function eraseTetrimino(cells) {
     console.log("Erasing Tetrimino", currentTetrimino.shape); // Debugging line
     currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
-      cells[currentTetrimino.position + index]?.classList.remove("active", currentTetrimino.color);
+      const cell = cells[currentTetrimino.position + index];
+      if (cell) {
+          cell.classList.remove("active");
+          cell.style.backgroundColor = "";  // Clear the background color style
+      }      
     });
 }
 
+// KEEPING ORIGINAL FUNCTION NAME WITH TYPO for compatibility
 export function renderTeromino(cells) {
     console.log("Rendering Tetrimino"); // Debugging line
     eraseTetrimino(cells); // Clear previous position
     currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
       if (cells[currentTetrimino.position + index]) {
-        cells[currentTetrimino.position + index].classList.add("active", currentTetrimino.color);
+        const cell = cells[currentTetrimino.position + index];
+        if (cell) {
+            cell.classList.add("active");
+            cell.style.backgroundColor = currentTetrimino.color;
+        }
       }
     });
 }
@@ -60,14 +69,86 @@ export function rotateTetrimino(cells) {
         console.log("❌ This Tetrimino does not rotate:", currentTetrimino.name); // Debugging
     }
 
-    renderTeromino(cells); // ✅ Draw the rotated shape
+    renderTeromino(cells); // ✅ Call with original typo
 }
 
 export function moveDown(cells) {
   console.log("Moving Tetrimino Down"); // Debugging line
-  eraseTetrimino(cells); // Remove old position
-  currentTetrimino.position += 10; // Move down
-  renderTeromino(cells); // Redraw
+
+  if (canMoveDown(cells)) {
+      eraseTetrimino(cells);            // Remove old position
+      currentTetrimino.position += 10;  // Move down
+      renderTeromino(cells);            // Call with original typo
+  } else {
+      // Lock the Tetrimino in place if it can't move down
+      currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
+          const pos = currentTetrimino.position + index;
+          if (cells[pos]) {
+              cells[pos].classList.add("occupied");
+              cells[pos].style.backgroundColor = currentTetrimino.color; // Use backgroundColor instead
+          }
+      });
+
+     
+      clearFullRows(cells);
+
+    
+      currentTetrimino = GenerateRandom();
+
+      
+      if (!canMoveDown(cells)) {
+          console.log("Game Over!");
+         
+          return;
+      }
+
+      renderTeromino(cells); // Call with original typo
+  }
+}
+
+function canMoveDown(cells) {
+  return currentTetrimino.shape[currentTetrimino.rotation].every(index => {
+      const newPosition = currentTetrimino.position + index + 10; // Move one row down
+
+      // Check if new position is within grid bounds and not occupied
+      return (
+          newPosition < cells.length &&                    
+          !cells[newPosition]?.classList.contains("occupied") 
+      );
+  });
+}
+
+function clearFullRows(cells) {
+  const rows = cells.length / 10; 
+  let clearedRows = 0; // Track how many rows were cleared
+
+  for (let row = rows - 1; row >= 0; row--) {
+      const start = row * 10;
+      const end = start + 10;
+
+      // Check if the row is full
+      const isFull = cells.slice(start, end).every(cell => cell.classList.contains("occupied"));
+      if (isFull) {
+          console.log(`Clearing row ${row}`);
+          clearedRows++; // Increment cleared rows count
+
+          // Move all rows above down by one
+          for (let i = start - 1; i >= 0; i--) {
+              cells[i + 10].className = cells[i].className; // Move cell class down
+              cells[i + 10].style.backgroundColor = cells[i].style.backgroundColor; // Move color down
+          }
+
+          // Clear the topmost row after shifting
+          for (let i = 0; i < 10; i++) {
+              cells[i].className = "cell"; 
+              cells[i].style.backgroundColor = ""; // Reset color
+          }
+
+          row++; // Recheck the same row index after clearing (since rows moved down)
+      }
+  }
+
+  console.log(`Total cleared rows: ${clearedRows}`);
 }
 
 // Export the TETRIMINOES object 
