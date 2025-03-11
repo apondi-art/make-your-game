@@ -10,7 +10,11 @@ body {
     height: 100vh;
     margin: 0;
     padding: 0;
+    backdrop-filter: blur(3px);
 }
+
+
+
 
 .board {
     display: grid;
