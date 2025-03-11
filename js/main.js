@@ -73,6 +73,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (event.key === "ArrowRight") {
             moveRight(cells);
         }
+
+        if (event.key === "ArrowDown") {
+            moveDown(cells)
+        }
     });
   
     // Function to handle game over
