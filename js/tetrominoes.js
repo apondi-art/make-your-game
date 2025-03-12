@@ -7,9 +7,9 @@ const TETRIMINOES = {
   J: { shape: [[1, 2, 2 + width, 2 + width * 2], [width, width + 1, width + 2, 2], [0, width, width * 2, 1 + width * 2], [width, width + 1, width + 2, width * 2]], color: "blue" },
   L: { shape: [[0, 1, 1 + width, 1 + width * 2], [width, width + 1, width + 2, 2], [1, width + 1, width * 2, width*2 + 1],  [width, width + 1, width + 2, 0]], color: "orange" },
   O: { shape: [[0, 1, width, width + 1]], color: "yellow" },
-  S: { shape: [[1, 2, width, width + 1], [0, width, width + 1, width * 2 + 1]], color: "green" },
+  S: { shape: [[1, 2, width, width + 1], [0, width, width + 1, width * 2 + 1]], color: "#65FE08" },
   Z: { shape: [[0, 1, width + 1, width + 2], [1, width, width + 1, width * 2]], color: "red" },
-  T: { shape: [[1, width, width + 1, width + 2], [1, width + 1, width + 2, width * 2 + 1], [width, width + 1, width + 2, width * 2 + 1], [1, width, width + 1, width * 2]], color: "purple" }
+  T: { shape: [[1, width, width + 1, width + 2], [1, width + 1, width + 2, width * 2 + 1], [1, width, width + 1, width * 2 + 1], [1, width, width + 1, width * 2 + 1]], color: "#CB00F5" }
 };
 
 
@@ -26,7 +26,6 @@ export function GenerateRandom() {
         rotation: 0,
         position: 4
     };
-    
     return currentTetrimino;
 }
 
