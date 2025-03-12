@@ -1,7 +1,7 @@
 import { GameBoard } from './gameBoard.js';
 import { PauseMenu } from './pauseMenu.js';
 import { initStartButton } from './start.js';
-import { GenerateRandom, renderTeromino, rotateTetrimino, moveDown, moveRight, moveLeft, currentTetrimino, eraseTetrimino } from './tetrominoes.js';
+import { renderTeromino, rotateTetrimino, moveDown, moveRight, moveLeft, currentTetrimino, ChangeNextToCurrent,eraseTetrimino } from './tetrominoes.js';
 
 let cells;
 let gameBoardElement;
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Cells:", cells.length);
 
     // Initial tetrimino setup
-    GenerateRandom();
+    ChangeNextToCurrent();
     console.log("Initial Tetrimino:", currentTetrimino);
 
     // Function to start the game
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     initStartButton(startGame);
 
-    // Event listener for controls
+    // Event listener for controlsGenera
     document.addEventListener("keydown", (event) => {
         if (!gameActive) return; // Ignore keypresses if game is not active
 
@@ -125,7 +125,7 @@ const handleRestart = () => {
     eraseTetrimino(cells);
     
     // Generate new Tetromino
-    GenerateRandom();
+    ChangeNextToCurrent();
     
     // Create a new PauseMenu instance with fresh event handlers
     const pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
@@ -183,7 +183,7 @@ const handleRestart = () => {
         const freshStartCallback = () => {
             eraseTetrimino(cells);
             // Generate a new random tetrimino to start with
-            GenerateRandom();
+            ChangeNextToCurrent();
             
             // Reinitialize the pause menu with the new game state
             const pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);

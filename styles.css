@@ -40,14 +40,49 @@ body {
 .cell.active {
     background-color: currentColor;
 }
-.next-piece {
-    display: flex;
+
+#nextPiece {
+    display: none; /* Hide the preview initially */
     grid-template-columns: repeat(4, 20px);
-    grid-template-rows: repeat(4, 20px);
-    gap: 2px;
-    background-color: black;
-    padding: 5px;
+    grid-gap: 2px;
+    padding: 10px;
+    background: #44475a;
     width: fit-content;
+    border-radius: 5px;
+}
+
+#previewContainer {
+  
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    background:white;
+    border-radius: 5px;
+    width: fit-content;
+}
+#previewContainer p {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Optional: adds "..." if text is too long */
+    text-align: center; /* Center text horizontally */
+}
+
+#nextPiece {
+    display: none;
+    grid-template-columns: repeat(4, 20px); /* 4x4 grid */
+    /* grid-gap: 2px; */
+    /* padding: 10px; */
+    background: 1e1e2e;
+    width: fit-content;
+    border-radius: 5px;
+}
+
+#nextPiece .cell {
+    width: 20px;
+    height: 20px;
+    background-color: transparent;
+    border:none;
+    /* border: 1px solid #555; */
 }
 
 

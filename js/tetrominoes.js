@@ -1,33 +1,71 @@
-import {Score} from './score.js';
+import { Score } from './score.js';
 
 const width = 10;
 
 const TETRIMINOES = {
-  I: { shape: [[1, width + 1, width * 2 + 1, width * 3 + 1], [width, width + 1, width + 2, width + 3]], color: "cyan" },
-  J: { shape: [[1, 2, 2 + width, 2 + width * 2], [width, width + 1, width + 2, 2], [0, width, width * 2, 1 + width * 2], [width, width + 1, width + 2, width * 2]], color: "blue" },
-  L: { shape: [[0, 1, 1 + width, 1 + width * 2], [width, width + 1, width + 2, 2], [1, width + 1, width * 2, width*2 + 1],  [width, width + 1, width + 2, 0]], color: "orange" },
-  O: { shape: [[0, 1, width, width + 1]], color: "yellow" },
-  S: { shape: [[1, 2, width, width + 1], [0, width, width + 1, width * 2 + 1]], color: "#65FE08" },
-  Z: { shape: [[0, 1, width + 1, width + 2], [1, width, width + 1, width * 2]], color: "red" },
-  T: { shape: [[1, width, width + 1, width + 2], [1, width + 1, width + 2, width * 2 + 1], [1, width, width + 1, width * 2 + 1], [1, width, width + 1, width * 2 + 1]], color: "#CB00F5" }
+    I: { shape: [[1, width + 1, width * 2 + 1, width * 3 + 1], [width, width + 1, width + 2, width + 3]], color: "cyan" },
+    J: { shape: [[1, 2, 2 + width, 2 + width * 2], [width, width + 1, width + 2, 2], [0, width, width * 2, 1 + width * 2], [width, width + 1, width + 2, width * 2]], color: "blue" },
+    L: { shape: [[0, 1, 1 + width, 1 + width * 2], [width, width + 1, width + 2, 2], [1, width + 1, width * 2, width * 2 + 1], [width, width + 1, width + 2, 0]], color: "orange" },
+    O: { shape: [[0, 1, width, width + 1]], color: "yellow" },
+    S: { shape: [[1, 2, width, width + 1], [0, width, width + 1, width * 2 + 1]], color: "#65FE08" },
+    Z: { shape: [[0, 1, width + 1, width + 2], [1, width, width + 1, width * 2]], color: "red" },
+    T: { shape: [[1, width, width + 1, width + 2], [1, width + 1, width + 2, width * 2 + 1], [1, width, width + 1, width * 2 + 1], [1, width, width + 1, width * 2 + 1]], color: "#CB00F5" }
 };
 
 
 export let currentTetrimino;
+export let nextTetri = GenerateRandom()
 
 export function GenerateRandom() {
     const keys = Object.keys(TETRIMINOES);
     const randomKey = keys[Math.floor(Math.random() * keys.length)];
 
-    currentTetrimino = { 
+    return {
         shape: TETRIMINOES[randomKey].shape,
         name: randomKey,
         color: TETRIMINOES[randomKey].color,
         rotation: 0,
         position: 4
     };
-    return currentTetrimino;
+
 }
+
+export function ChangeNextToCurrent() {
+    currentTetrimino = nextTetri;
+    nextTetri = GenerateRandom()
+    updatePreview(nextTetri)
+}
+
+export function updatePreview(nextTetri) {
+    const container = document.getElementById("previewContainer")
+    const nextpiece = document.getElementById("nextPiece");
+
+    // 🔥 Clear old preview first
+    nextpiece.innerHTML = "";
+
+    // 🆕 Create 16 new divs for 4x4 preview grid
+    for (let i = 0; i < 16; i++) {
+        let cell = document.createElement("div");
+        cell.classList.add("cell");
+        nextpiece.appendChild(cell);
+    }
+    container.appendChild(nextpiece)
+
+    const previewCells = nextpiece.children;
+
+    // 📌 Get the current rotation of the Tetromino
+    const shape = nextTetri.shape[nextTetri.rotation];
+
+    // 🏗️ Normalize the shape for a 4x4 preview grid
+    shape.forEach(index => {
+        const normalizedPos = (index % 10) + (Math.floor(index / 10) * 4); // Convert from 10x10 to 4x4
+        if (previewCells[normalizedPos]) {
+            previewCells[normalizedPos].style.backgroundColor = nextTetri.color;
+        }
+    });
+}
+
+
 
 export function eraseTetrimino(cells) {
     currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
@@ -35,7 +73,7 @@ export function eraseTetrimino(cells) {
         if (cell) {
             cell.classList.remove("active");
             cell.style.backgroundColor = "";
-        }      
+        }
     });
 }
 
@@ -52,16 +90,16 @@ export function renderTeromino(cells) {
 
 export function rotateTetrimino(cells) {
     if (canRotate(cells)) {
-      eraseTetrimino(cells);
-      if (currentTetrimino.shape.length > 1) {
-        currentTetrimino.rotation = (currentTetrimino.rotation + 1) % currentTetrimino.shape.length;
-      }
-      renderTeromino(cells);
+        eraseTetrimino(cells);
+        if (currentTetrimino.shape.length > 1) {
+            currentTetrimino.rotation = (currentTetrimino.rotation + 1) % currentTetrimino.shape.length;
+        }
+        renderTeromino(cells);
     } else {
-      
-      moveDown(cells);
+
+        moveDown(cells);
     }
-  }
+}
 
 
 
@@ -81,7 +119,7 @@ export function moveDown(cells) {
         });
         clearFullRows(cells);
         if (!canPlaceNewTetrimino(cells)) return false;
-        GenerateRandom();
+        ChangeNextToCurrent();
         renderTeromino(cells);
         return true;
     }
@@ -95,7 +133,7 @@ export function moveRight(cells) {
         renderTeromino(cells);
         return true;
     } else {
-       moveDown(cells)
+        moveDown(cells)
         return true;
     }
 }
@@ -110,7 +148,7 @@ export function moveLeft(cells) {
         renderTeromino(cells);
         return true;
     } else {
-       moveDown(cells)
+        moveDown(cells)
         return true;
     }
 }
@@ -120,33 +158,33 @@ function canRotate(cells) {
     const gridWidth = 10;
     const nextRotation = (currentTetrimino.rotation + 1) % currentTetrimino.shape.length;
     const nextShape = currentTetrimino.shape[nextRotation];
-    
+
     return nextShape.every(index => {
-      const newPosition = currentTetrimino.position + index;
-      
-      // Check if position is valid (within grid bounds)
-      const currentRow = Math.floor(currentTetrimino.position / gridWidth);
-      const currentCol = currentTetrimino.position % gridWidth;
-      const relativeRow = Math.floor(index / gridWidth);
-      const relativeCol = index % gridWidth;
-      const absoluteRow = currentRow + relativeRow;
-      const absoluteCol = currentCol + relativeCol;
-      
-      // Check grid boundaries
-      if (absoluteRow < 0 || absoluteRow >= cells.length / gridWidth || 
-          absoluteCol < 0 || absoluteCol >= gridWidth) {
-        return false;
-      }
-      
-      // Check collision with other pieces
-      if (newPosition >= cells.length || 
-          cells[newPosition]?.classList.contains("occupied")) {
-        return false;
-      }
-      
-      return true;
+        const newPosition = currentTetrimino.position + index;
+
+        // Check if position is valid (within grid bounds)
+        const currentRow = Math.floor(currentTetrimino.position / gridWidth);
+        const currentCol = currentTetrimino.position % gridWidth;
+        const relativeRow = Math.floor(index / gridWidth);
+        const relativeCol = index % gridWidth;
+        const absoluteRow = currentRow + relativeRow;
+        const absoluteCol = currentCol + relativeCol;
+
+        // Check grid boundaries
+        if (absoluteRow < 0 || absoluteRow >= cells.length / gridWidth ||
+            absoluteCol < 0 || absoluteCol >= gridWidth) {
+            return false;
+        }
+
+        // Check collision with other pieces
+        if (newPosition >= cells.length ||
+            cells[newPosition]?.classList.contains("occupied")) {
+            return false;
+        }
+
+        return true;
     });
-  }
+}
 
 
 function canMoveLeft(cells) {
@@ -155,10 +193,10 @@ function canMoveLeft(cells) {
         const currentPos = currentTetrimino.position + index;
         const currentColumn = currentPos % gridWidth;
         const newPosition = currentPos - 1;
-        
+
         return (
             currentColumn > 0 &&  // Ensure it doesn't go past right edge
-            newPosition < cells.length &&                    
+            newPosition < cells.length &&
             !cells[newPosition]?.classList.contains("occupied")
         );
     });
@@ -171,10 +209,10 @@ function canMoveRight(cells) {
         const currentPos = currentTetrimino.position + index;
         const currentColumn = currentPos % gridWidth;
         const newPosition = currentPos + 1;
-        
+
         return (
             currentColumn < gridWidth - 1 &&  // Ensure it doesn't go past right edge
-            newPosition < cells.length &&                    
+            newPosition < cells.length &&
             !cells[newPosition]?.classList.contains("occupied")
         );
     });
@@ -213,7 +251,7 @@ function canPlaceNewTetrimino(cells) {
 
 function clearFullRows(cells) {
     const rows = cells.length / 10;
-    let linesCleared = 0; 
+    let linesCleared = 0;
 
     for (let row = rows - 1; row >= 0; row--) {
         const start = row * 10;
