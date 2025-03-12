@@ -37,6 +37,7 @@ export function ChangeNextToCurrent() {
 }
 
 export function updatePreview(nextTetri) {
+    const container = document.getElementById("previewContainer")
     const nextpiece = document.getElementById("nextPiece");
 
     // 🔥 Clear old preview first
@@ -48,6 +49,7 @@ export function updatePreview(nextTetri) {
         cell.classList.add("cell");
         nextpiece.appendChild(cell);
     }
+    container.appendChild(nextpiece)
 
     const previewCells = nextpiece.children;
 
