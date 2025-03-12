@@ -8,6 +8,7 @@ export function initStartButton(startCallback) {
     startBtn.addEventListener('click', () => {
         startOverlay.style.display = 'none';
         pauseBtn.style.display = 'block';
+        document.getElementById("nextPiece").style.display = "grid";
     
 
         
