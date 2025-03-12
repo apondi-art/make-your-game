@@ -1,5 +1,5 @@
 body {
-    background-image: url("../images/plastic.jpg");
+
     background-color: #1e1e2e;
     background-size: cover;
     background-repeat: no-repeat;
@@ -40,6 +40,17 @@ body {
 .cell.active {
     background-color: currentColor;
 }
+.next-piece {
+    display: flex;
+    grid-template-columns: repeat(4, 20px);
+    grid-template-rows: repeat(4, 20px);
+    gap: 2px;
+    background-color: black;
+    padding: 5px;
+    width: fit-content;
+}
+
+
 
 .pause-toggle {
     display: none;
@@ -177,11 +188,11 @@ body {
 
 /* Only show tetrominoes when game is started */
 .board.started .cell.active.cyan {
-    background-color: cyan;
+    background-color: #7786b7;
 }
 
 .board.started .cell.active.blue {
-    background-color: blue;
+    background-color: #b67266;
 }
 
 .board.started .cell.active.orange {
@@ -201,7 +212,7 @@ body {
 }
 
 .board.started .cell.active.purple {
-    background-color: purple;
+    background-color: #b2afaf;
 }
 
 /* Media Queries */
