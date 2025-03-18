@@ -37,33 +37,36 @@ export function ChangeNextToCurrent() {
 }
 
 export function updatePreview(nextTetri) {
-    const container = document.getElementById("previewContainer")
     const nextpiece = document.getElementById("nextPiece");
 
-    // 🔥 Clear old preview first
-    nextpiece.innerHTML = "";
-
-    // 🆕 Create 16 new divs for 4x4 preview grid
-    for (let i = 0; i < 16; i++) {
-        let cell = document.createElement("div");
-        cell.classList.add("cell");
-        nextpiece.appendChild(cell);
+    let previewCells = nextpiece.children;
+    if (previewCells.length !== 16) {
+        nextpiece.innerHTML = ""; 
+        const fragment = document.createDocumentFragment();
+        for (let i = 0; i < 16; i++) {
+            let cell = document.createElement("div");
+            cell.classList.add("cell");
+            fragment.appendChild(cell);
+        }
+        nextpiece.appendChild(fragment);
+        previewCells = nextpiece.children; 
     }
-    container.appendChild(nextpiece)
 
-    const previewCells = nextpiece.children;
-
-    // 📌 Get the current rotation of the Tetromino
     const shape = nextTetri.shape[nextTetri.rotation];
 
-    // 🏗️ Normalize the shape for a 4x4 preview grid
+   
+    for (let cell of previewCells) {
+        cell.style.backgroundColor = ""; 
+    }
+
     shape.forEach(index => {
-        const normalizedPos = (index % 10) + (Math.floor(index / 10) * 4); // Convert from 10x10 to 4x4
-        if (previewCells[normalizedPos]) {
+        const normalizedPos = (index % 10) + (Math.floor(index / 10) * 4);
+        if (normalizedPos >= 0 && normalizedPos < 16) { 
             previewCells[normalizedPos].style.backgroundColor = nextTetri.color;
         }
     });
 }
+
 
 
 
