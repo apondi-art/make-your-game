@@ -12,6 +12,7 @@ body {
     backdrop-filter: blur(3px);
 }
 
+
 .board {
     position: relative;
     display: grid;
