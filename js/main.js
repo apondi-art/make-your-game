@@ -10,6 +10,9 @@ let dropInterval = 500; // Now a variable to change with levels
 let dropCounter = 0;
 let gameActive = false;
 let animationId = null;
+   let keyPressed = false;
+
+
 // Store the animation frame ID
 
 // Timer, level, and lives variables
@@ -122,39 +125,38 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Show notification (for level up or life lost)
-    // Show notification (for level up or life lost)
     function showNotification(message) {
         let notification = document.querySelector(".game-notification");
-
+    
         if (!notification) {
             notification = document.createElement("div");
             notification.className = "game-notification";
-            gameBoardElement.appendChild(notification); // Append to game board instead of body
+            gameBoardElement.appendChild(notification);
+    
+            // ✅ Remove notification from DOM after fade-out
+            notification.addEventListener("animationend", () => {
+                if (notification.classList.contains("fade-out")) {
+                    notification.remove();
+                }
+            });
         }
-
-        notification.textContent = message;
-        notification.style.display = "block"; // Ensure it's visible
-
-        // Apply different styles based on message type
-        notification.classList.remove("level-up", "life-lost"); // Reset classes
-        if (message.includes("Level")) {
-            notification.classList.add("level-up");
-        } else {
-            notification.classList.add("life-lost");
-        }
-
-        // Remove any previous fade-out effect
-        notification.classList.remove("fade-out");
-
-        // Show the notification and fade out after 2 seconds
-        setTimeout(() => {
-            notification.classList.add("fade-out");
+    
+        requestAnimationFrame(() => {
+            notification.textContent = message; // ✅ Prevents unnecessary reflows
+            notification.classList.remove("fade-out", "level-up", "life-lost"); // ✅ Reset animations
+            notification.classList.add(message.includes("Level") ? "level-up" : "life-lost");
+    
+            // ✅ Start fade-in animation (CSS handles it)
+            notification.classList.add("fade-in");
+    
+            // ✅ Let CSS handle fade-out after 1 second
             setTimeout(() => {
-                notification.style.display = "none";
+                notification.classList.remove("fade-in");
+                notification.classList.add("fade-out");
             }, 1000);
-        }, 1000);
+        });
     }
-
+    
 
     // Function to start the game
     const startGame = () => {
@@ -193,47 +195,39 @@ document.addEventListener("DOMContentLoaded", function () {
         requestAnimationFrame(gameLoop);
     };
 
-    // Game loop function
-    const gameLoop = (time = 0) => {
-        if (!gameActive) return; // Stop the loop if game is not active
 
-        const deltaTime = time - lastTime;
-        lastTime = time;
+
+    const gameLoop = (currentTime) => {
+        if (!gameActive) return;
+
+        if (!lastTime) lastTime = currentTime; // Ensure lastTime is initialized
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
         dropCounter += deltaTime;
 
-        if (dropCounter > dropInterval) {
-            const moveResult = moveDown(cells);
-
-            // Check if the tetrimino can't move down anymore (collision)
-            if (moveResult === false) {
-                // Check for game over condition (stack reached the top)
-                // This would be determined by your tetris logic
-                const isGameOver = checkGameOver(); // Implement this function based on your game logic
-
-                if (isGameOver) {
+        while (dropCounter > dropInterval) { // Ensure we don't miss frames
+            if (!moveDown(cells)) {
+                if (checkGameOver()) {
                     if (lives > 1) {
-                        // Lose a life and reset the board
                         loseLife();
                         resetBoard();
                     } else {
-                        // Game over when out of lives
                         gameActive = false;
+                        cancelAnimationFrame(animationId); // ✅ STOP loop properly
                         clearInterval(timerInterval);
-                        loseLife()
                         handleGameOver();
                         return;
                     }
                 }
             }
-
-            dropCounter = 0; // Reset drop counter
+            dropCounter -= dropInterval; // ✅ Prevents frame skipping
         }
 
-        // Check if we should update the level
         updateLevel();
-
-        animationId = requestAnimationFrame(gameLoop); // Call gameLoop again for the next frame
+        animationId = requestAnimationFrame(gameLoop);
     };
+
+
 
     function checkGameOver() {
 
@@ -261,24 +255,20 @@ document.addEventListener("DOMContentLoaded", function () {
     initStartButton(startGame);
 
     // Event listener for controls
+ 
+
     document.addEventListener("keydown", (event) => {
-        if (!gameActive) return; // Ignore keypresses if game is not active
-
-        console.log("Key Pressed:", event.key);
-
-        if (event.key === "ArrowUp") {
-            rotateTetrimino(cells);
-        }
-        if (event.key === "ArrowLeft") {
-            moveLeft(cells);
-        }
-        if (event.key === "ArrowRight") {
-            moveRight(cells);
-        }
-
-        if (event.key === "ArrowDown") {
-            moveDown(cells);
-        }
+        if (!gameActive || keyPressed) return; 
+        keyPressed = true;
+    
+        requestAnimationFrame(() => {
+            if (event.key === "ArrowUp") rotateTetrimino(cells);
+            if (event.key === "ArrowLeft") moveLeft(cells);
+            if (event.key === "ArrowRight") moveRight(cells);
+            if (event.key === "ArrowDown") moveDown(cells);
+    
+            keyPressed = false;
+        });
     });
 
     // Function to handle game over
