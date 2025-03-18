@@ -6,15 +6,20 @@ export class GameBoard {
     }
 
     initBoard() {
+        const fragment = document.createDocumentFragment();
         for (let i = 0; i < 200; i++) {
             let cell = document.createElement("div");
             cell.classList.add("cell");
-            this.board.appendChild(cell);
+            // this.board.appendChild(cell);
+            fragment.appendChild(cell)
             this.cells.push(cell);
         }
+        this.board.appendChild(fragment) //this does single  DOM opration
     }
 
     resetBoard() {
-        this.cells.forEach(cell => cell.style.backgroundColor = "#44475a");
+        requestAnimationFrame(() => {
+            this.cells.forEach(cell => cell.style.backgroundColor = "#44475a");
+        });
     }
 }
