@@ -249,6 +249,31 @@ function canPlaceNewTetrimino(cells) {
 }
 
 
+export function hardDrop(cells) {
+    while (canMoveDown(cells)) {
+        eraseTetrimino(cells); // Remove previous position
+        currentTetrimino.position += 10; // Move one row down
+    }
+
+    renderTeromino(cells);
+   
+    currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
+        const pos = currentTetrimino.position + index;
+        if (cells[pos]) {
+            cells[pos].classList.add("occupied");
+            cells[pos].style.backgroundColor = currentTetrimino.color;
+        }
+    });
+
+    clearFullRows(cells);
+    if (!canPlaceNewTetrimino(cells)) {
+        handleGameOver();
+    } else {
+        ChangeNextToCurrent();
+        renderTeromino(cells);
+    }
+}
+
 
 
 
