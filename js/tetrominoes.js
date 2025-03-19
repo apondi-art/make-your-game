@@ -73,21 +73,24 @@ export function updatePreview(nextTetri) {
 export function eraseTetrimino(cells) {
     currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
         const cell = cells[currentTetrimino.position + index];
-        if (cell) {
+        if (cell && cell.classList.contains("active")) {
             cell.classList.remove("active");
             cell.style.backgroundColor = "";
         }
     });
 }
 
+
 export function renderTeromino(cells) {
-    eraseTetrimino(cells);
-    currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
-        const cell = cells[currentTetrimino.position + index];
-        if (cell) {
-            cell.classList.add("active");
-            cell.style.backgroundColor = currentTetrimino.color;
-        }
+    requestAnimationFrame(() => {
+        eraseTetrimino(cells); // Remove old piece
+        currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
+            const cell = cells[currentTetrimino.position + index];
+            if (cell) {
+                cell.classList.add("active");
+                cell.style.backgroundColor = currentTetrimino.color;
+            }
+        });
     });
 }
 
