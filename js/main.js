@@ -1,7 +1,7 @@
 import { GameBoard } from './gameBoard.js';
 import { PauseMenu } from './pauseMenu.js';
 import { initStartButton } from './start.js';
-import { renderTeromino, rotateTetrimino, moveDown, moveRight, moveLeft, currentTetrimino, ChangeNextToCurrent, eraseTetrimino } from './tetrominoes.js';
+import { renderTeromino, hardDrop, rotateTetrimino, moveDown, moveRight, moveLeft, currentTetrimino, ChangeNextToCurrent, eraseTetrimino } from './tetrominoes.js';
 
 let cells;
 let gameBoardElement;
@@ -256,20 +256,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Event listener for controls
  
-
+    let lastKeyTime = 0;  // Tracks the last time a key was pressed
+    const keyCooldown = 100; // Minimum time (in ms) between key presses
+    
     document.addEventListener("keydown", (event) => {
-        if (!gameActive || keyPressed) return; 
-        keyPressed = true;
+        if (!gameActive) return;
+    
+        const currentTime = performance.now();
+        if (currentTime - lastKeyTime < keyCooldown) return; // Enforce cooldown
+    
+        lastKeyTime = currentTime;  // Update last press time
     
         requestAnimationFrame(() => {
             if (event.key === "ArrowUp") rotateTetrimino(cells);
             if (event.key === "ArrowLeft") moveLeft(cells);
             if (event.key === "ArrowRight") moveRight(cells);
-            if (event.key === "ArrowDown") moveDown(cells);
-    
-            keyPressed = false;
+            if (event.key === "ArrowDown") hardDrop(cells,  handleGameOver);
         });
     });
+
+
+
+
+
 
     // Function to handle game over
     function handleGameOver() {
