@@ -249,7 +249,7 @@ function canPlaceNewTetrimino(cells) {
 }
 
 
-export function hardDrop(cells) {
+export function hardDrop(cells, handleGameOver) {
     while (canMoveDown(cells)) {
         eraseTetrimino(cells); 
         currentTetrimino.position += 10; 
