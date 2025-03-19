@@ -271,7 +271,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (event.key === "ArrowUp") rotateTetrimino(cells);
             if (event.key === "ArrowLeft") moveLeft(cells);
             if (event.key === "ArrowRight") moveRight(cells);
-            if (event.key === "ArrowDown") hardDrop(cells);
+            if (event.key === "ArrowDown") hardDrop(cells,  handleGameOver);
         });
     });
 
