@@ -6,11 +6,10 @@ import { renderTeromino, rotateTetrimino, moveDown, moveRight, moveLeft, current
 let cells;
 let gameBoardElement;
 let lastTime = 0;
-let dropInterval = 500; // Now a variable to change with levels
+let dropInterval = 500; // Variable to change with levels
 let dropCounter = 0;
 let gameActive = false;
-let animationId = null;
-// Store the animation frame ID
+let animationId = null; // Store the animation frame ID
 
 // Timer, level, and lives variables
 let gameTime = 180; // 3 minutes in seconds
@@ -19,6 +18,16 @@ let level = 1;
 let lives = 3; // Starting with 3 lives
 let timerInterval = null;
 let lineThreshold = 5; // Lines needed to clear for level up
+
+// Key state tracking to reduce frame drops
+const keyState = {
+    ArrowUp: false,
+    ArrowDown: false,
+    ArrowLeft: false,
+    ArrowRight: false
+};
+let lastKeyProcessed = 0;
+const KEY_PROCESS_INTERVAL = 100; // Process keys every 100ms
 
 document.addEventListener("DOMContentLoaded", function () {
     const gameBoard = new GameBoard();
@@ -122,7 +131,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Show notification (for level up or life lost)
-    // Show notification (for level up or life lost)
     function showNotification(message) {
         let notification = document.querySelector(".game-notification");
 
@@ -155,9 +163,36 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 1000);
     }
 
+    // Process key states to reduce frame drops
+    function processKeyStates(time) {
+        // Only process keys at specific intervals
+        if (time - lastKeyProcessed < KEY_PROCESS_INTERVAL) return;
+        
+        if (keyState.ArrowUp) {
+            rotateTetrimino(cells);
+            keyState.ArrowUp = false; // Reset after processing
+        }
+        if (keyState.ArrowLeft) {
+            moveLeft(cells);
+        }
+        if (keyState.ArrowRight) {
+            moveRight(cells);
+        }
+        if (keyState.ArrowDown) {
+            moveDown(cells);
+        }
+        
+        lastKeyProcessed = time;
+    }
 
     // Function to start the game
     const startGame = () => {
+        // Only cancel existing animation frame if there is one
+        if (animationId !== null) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        
         PauseMenu;
         gameActive = true;
         gameBoardElement.classList.add("started");
@@ -169,6 +204,10 @@ document.addEventListener("DOMContentLoaded", function () {
         level = 1;
         lives = 3;
         dropInterval = 500; // Reset drop interval
+
+        // Reset key states
+        Object.keys(keyState).forEach(key => keyState[key] = false);
+        lastKeyProcessed = 0;
 
         // Update displays
         const timerDisplay = document.getElementById("timer");
@@ -189,17 +228,30 @@ document.addEventListener("DOMContentLoaded", function () {
         clearInterval(timerInterval); // Clear any existing intervals
         timerInterval = setInterval(updateTimer, 1000);
 
-        // Start the game loop
-        requestAnimationFrame(gameLoop);
+        // Initialize time tracking variables for frame rate handling
+        lastTime = performance.now();
+        dropCounter = 0;
+        
+        // Start the game loop - this is the only place where requestAnimationFrame is initiated
+        animationId = requestAnimationFrame(gameLoop);
     };
 
-    // Game loop function
+    // Game loop function with frame drop handling and optimized key processing
     const gameLoop = (time = 0) => {
-        if (!gameActive) return; // Stop the loop if game is not active
+        // Exit if game is not active - important for stopping the loop
+        if (!gameActive) return;
 
+        // Calculate accurate time delta for smooth animation even with frame drops
         const deltaTime = time - lastTime;
         lastTime = time;
-        dropCounter += deltaTime;
+        
+        // Cap deltaTime to prevent huge jumps after tab switch or performance issues
+        // This helps handle frame drops more gracefully
+        const cappedDeltaTime = Math.min(deltaTime, 100);
+        dropCounter += cappedDeltaTime;
+
+        // Process key states at controlled intervals to reduce frame drops
+        processKeyStates(time);
 
         if (dropCounter > dropInterval) {
             const moveResult = moveDown(cells);
@@ -207,8 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Check if the tetrimino can't move down anymore (collision)
             if (moveResult === false) {
                 // Check for game over condition (stack reached the top)
-                // This would be determined by your tetris logic
-                const isGameOver = checkGameOver(); // Implement this function based on your game logic
+                const isGameOver = checkGameOver();
 
                 if (isGameOver) {
                     if (lives > 1) {
@@ -219,9 +270,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         // Game over when out of lives
                         gameActive = false;
                         clearInterval(timerInterval);
-                        loseLife()
+                        loseLife();
                         handleGameOver();
-                        return;
+                        return; // Exit the game loop without requesting a new frame
                     }
                 }
             }
@@ -232,11 +283,14 @@ document.addEventListener("DOMContentLoaded", function () {
         // Check if we should update the level
         updateLevel();
 
-        animationId = requestAnimationFrame(gameLoop); // Call gameLoop again for the next frame
+        // This is the ONLY place where requestAnimationFrame should be called
+        // Only request a new frame if the game is still active
+        if (gameActive) {
+            animationId = requestAnimationFrame(gameLoop);
+        }
     };
 
     function checkGameOver() {
-
         const topRowCells = cells.slice(0, 30);
         return topRowCells.some(cell => cell.classList.contains("active") && !cell.classList.contains("current"));
     }
@@ -260,32 +314,42 @@ document.addEventListener("DOMContentLoaded", function () {
 
     initStartButton(startGame);
 
-    // Event listener for controls
+    // Optimized event listeners for key presses to reduce frame drops
     document.addEventListener("keydown", (event) => {
         if (!gameActive) return; // Ignore keypresses if game is not active
 
-        console.log("Key Pressed:", event.key);
+        // Prevent default action for game keys to avoid browser scrolling
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+            event.preventDefault();
+            
+            // Record key state instead of immediate execution
+            keyState[event.key] = true;
+        }
+    });
 
-        if (event.key === "ArrowUp") {
-            rotateTetrimino(cells);
+    // Key up listener to clear key states
+    document.addEventListener("keyup", (event) => {
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+            keyState[event.key] = false;
         }
-        if (event.key === "ArrowLeft") {
-            moveLeft(cells);
-        }
-        if (event.key === "ArrowRight") {
-            moveRight(cells);
-        }
+    });
 
-        if (event.key === "ArrowDown") {
-            moveDown(cells);
-        }
+    // Lose focus event handler to prevent stuck keys
+    window.addEventListener("blur", () => {
+        // Reset all key states when window loses focus
+        Object.keys(keyState).forEach(key => keyState[key] = false);
     });
 
     // Function to handle game over
     function handleGameOver() {
         gameActive = false;
         clearInterval(timerInterval);
-        cancelAnimationFrame(animationId);
+        
+        // Cancel animation frame when game over
+        if (animationId !== null) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
 
         const pauseButton = document.getElementById("pauseBtn");
         if (pauseButton) {
@@ -294,7 +358,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let existingGameOver = document.querySelector(".game-over");
         if (existingGameOver) existingGameOver.remove();
-        document.getElementById('pauseBtn').style.displa = "none"
+        
+        // Fixed typo in display property
+        document.getElementById('pauseBtn').style.display = "none";
+        
         const gameOverDiv = document.createElement("div");
         gameOverDiv.className = "game-over";
         gameOverDiv.innerHTML = `
@@ -316,7 +383,6 @@ document.addEventListener("DOMContentLoaded", function () {
             gameOverDiv.remove();
             handleQuit();
         });
-
     }
 
     // Callback for restart
@@ -325,7 +391,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Reset game state
         gameActive = false;
-        if (animationId) cancelAnimationFrame(animationId);
+        
+        // Cancel any existing animation frame
+        if (animationId !== null) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        
         clearInterval(timerInterval); // Clear timer interval
 
         // Reset game board
@@ -334,6 +406,10 @@ document.addEventListener("DOMContentLoaded", function () {
             cell.className = "cell";
             cell.style.backgroundColor = "";
         });
+
+        // Reset key states
+        Object.keys(keyState).forEach(key => keyState[key] = false);
+        lastKeyProcessed = 0;
 
         // Reset score, lines, timer, level, and lives
         document.getElementById("score").textContent = "0";
@@ -379,7 +455,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Create a new PauseMenu instance with fresh event handlers
         const pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
 
-        // Restart the game
+        // Restart the game by calling startGame (which will set up a single animation frame)
         gameActive = true;
         startGame();
     };
@@ -387,15 +463,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const handleQuit = () => {
         console.log("Game quit");
 
-
-        // const gameOverModal = document.getElementById("game-over-modal");
-        // if (gameOverModal) {
-        //     gameOverModal.style.display = "none";  
-        // }
-
         gameActive = false;
-        if (animationId) cancelAnimationFrame(animationId);
+        
+        // Cancel any active animation frame
+        if (animationId !== null) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        
         clearInterval(timerInterval);
+
+        // Reset key states
+        Object.keys(keyState).forEach(key => keyState[key] = false);
+        lastKeyProcessed = 0;
 
         // Hide pause menu
         document.getElementById("pauseMenu").style.display = "none";
@@ -446,7 +526,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Reinitialize the pause menu with the new game state
             const pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
 
-            // Start the game with fresh state
+            // Start the game with fresh state (this will set up a single animation frame)
             startGame();
         };
 
@@ -455,16 +535,37 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     const handlePause = () => {
+        if (!gameActive) return; // Already paused
+        
         gameActive = false;  // Stop the game loop
-        if (animationId) cancelAnimationFrame(animationId);
+        
+        // Cancel the animation frame when pausing
+        if (animationId !== null) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        
         clearInterval(timerInterval); // Pause the timer
         console.log("Game paused");
     };
 
     const handleResume = () => {
+        if (gameActive) return; // Already running
+        
         gameActive = true;  // Resume the game loop
-        requestAnimationFrame(gameLoop);  // Start frame generation again
-        timerInterval = setInterval(updateTimer, 1000); // Resume the timer
+        
+        // Reset time tracking to prevent large delta jumps when resuming
+        lastTime = performance.now();
+        
+        // Reset key states
+        Object.keys(keyState).forEach(key => keyState[key] = false);
+        lastKeyProcessed = 0;
+        
+        // Start the game loop again with a single requestAnimationFrame
+        animationId = requestAnimationFrame(gameLoop);
+        
+        // Resume the timer
+        timerInterval = setInterval(updateTimer, 1000);
         console.log("Game resumed");
     };
 
