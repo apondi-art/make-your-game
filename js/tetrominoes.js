@@ -251,8 +251,8 @@ function canPlaceNewTetrimino(cells) {
 
 export function hardDrop(cells) {
     while (canMoveDown(cells)) {
-        eraseTetrimino(cells); // Remove previous position
-        currentTetrimino.position += 10; // Move one row down
+        eraseTetrimino(cells); 
+        currentTetrimino.position += 10; 
     }
 
     renderTeromino(cells);
