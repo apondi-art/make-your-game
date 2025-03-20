@@ -78,15 +78,17 @@ export function eraseTetrimino(cells) {
 }
 
 export function renderTeromino(cells) {
-    eraseTetrimino(cells);
+    eraseTetrimino(cells); // Only erase the previous position
+
     currentTetrimino.shape[currentTetrimino.rotation].forEach(index => {
         const cell = cells[currentTetrimino.position + index];
-        if (cell) {
+        if (cell && !cell.classList.contains("active")) { 
             cell.classList.add("active");
             cell.style.backgroundColor = currentTetrimino.color;
         }
     });
 }
+
 
 export function rotateTetrimino(cells) {
     if (canRotate(cells)) {
