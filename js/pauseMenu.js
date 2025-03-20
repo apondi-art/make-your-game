@@ -4,7 +4,6 @@ export class PauseMenu {
         this.pauseMenu = document.getElementById("pauseMenu");
         this.restartBtn = document.getElementById("restartBtn");
         this.quitBtn = document.getElementById("quitBtn");
-        this.continueBtn = document.getElementById("continueBtn");
         this.gameBoard = gameBoard;
         this.isPaused = false;
         this.onRestart = onRestart;
@@ -36,7 +35,7 @@ export class PauseMenu {
         console.log("Resetting pause state");
         this.isPaused = false;
         this.pauseMenu.style.display = "none";
-        this.pauseBtn.textContent = "Pause";
+        this.pauseBtn.textContent = "Pause"; // ✅ Ensures the button resets after quitting
     }
 
     initEvents() {
@@ -48,13 +47,18 @@ export class PauseMenu {
         this.restartBtn.addEventListener("click", () => {
             console.log("Restart button clicked!");
             this.gameBoard.resetBoard();
-            this.togglePause();
+
+            // ✅ Only toggle pause if the game was actually paused
+            if (this.isPaused) {
+                this.togglePause();
+            }
+
             this.onRestart();
         });
 
         this.quitBtn.addEventListener("click", () => {
             console.log("Quit button clicked!");
-            this.resetPauseState(); // Reset pause state on quit
+            this.resetPauseState(); // ✅ Reset Pause state properly
             this.gameBoard.resetBoard();
             this.onQuit();
         });
