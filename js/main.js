@@ -220,8 +220,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const startGame = () => {
         // Only cancel existing animation frame if there is one
         if (animationId !== null) {
-            cancelAnimationFrame(animationId);
-            animationId = null;
+         requestAnimationFrame(gameLoop);
+            return;
         }
         
         gameActive = true;
@@ -282,14 +282,16 @@ document.addEventListener("DOMContentLoaded", function () {
     // Game loop function with frame drop handling and optimized key processing
     const gameLoop = (time = 0) => {
         // Exit if game is not active
-        if (!gameActive) return;
-
+        if (!gameActive) {
+            requestAnimationFrame(gameLoop);
+            return;
+        }
         // Calculate accurate time delta for smooth animation
         const deltaTime = time - lastTime;
         lastTime = time;
         
         // Cap deltaTime to prevent huge jumps
-        const cappedDeltaTime = Math.min(deltaTime, 100);
+        const cappedDeltaTime = Math.min(deltaTime, 16);
         dropCounter += cappedDeltaTime;
 
         // Process key states at controlled intervals
@@ -314,7 +316,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         // Lose a life and reset the board
                         loseLife();
                         resetBoard();
-                    } else {
                         // Game over when out of lives
                         gameActive = false;
                         loseLife();
@@ -366,11 +367,6 @@ document.addEventListener("DOMContentLoaded", function () {
         pauseStartTime = Date.now(); // Record when we paused
         
         // Cancel the animation frame
-        if (animationId !== null) {
-            cancelAnimationFrame(animationId);
-            animationId = null;
-        }
-        
         // Show pause menu
         document.getElementById("pauseMenu").style.display = "flex";
         
@@ -381,6 +377,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         
         console.log("Game paused");
+        if (animationId !== null) {
+         requestAnimationFrame(gameLoop);
+          return;
+        }
+        
     };
 
     // Optimized resume handler
