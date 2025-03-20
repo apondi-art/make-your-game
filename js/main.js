@@ -16,8 +16,17 @@ let gameTime = 180; // 3 minutes in seconds
 let timeLeft = gameTime;
 let level = 1;
 let lives = 3; // Starting with 3 lives
-let timerInterval = null;
+let gameStartTime = 0;
+let pauseStartTime = 0;
+let totalPausedTime = 0;
 let lineThreshold = 5; // Lines needed to clear for level up
+
+// Notification system variables
+let notificationQueue = [];
+let currentNotification = null;
+let notificationTimer = 0;
+const NOTIFICATION_DURATION = 1000; // Display time in ms
+let notificationElement = null;
 
 // Key state tracking to reduce frame drops
 const keyState = {
@@ -29,6 +38,9 @@ const keyState = {
 let lastKeyProcessed = 0;
 const KEY_PROCESS_INTERVAL = 100; // Process keys every 100ms
 
+// Pause menu reference
+let pauseMenu = null;
+
 document.addEventListener("DOMContentLoaded", function () {
     const gameBoard = new GameBoard();
     gameBoardElement = document.getElementById("game-board");
@@ -36,6 +48,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const quitBtn = document.getElementById("quitBtn");
     cells = Array.from(document.querySelectorAll(".cell"));
     console.log("Cells:", cells.length);
+
+    // Create notification element once during initialization
+    notificationElement = document.createElement("div");
+    notificationElement.className = "game-notification";
+    notificationElement.style.display = "none";
+    gameBoardElement.appendChild(notificationElement);
 
     // Add timer, level, and lives displays to the score board
     const scoreBoard = document.querySelector(".score-board");
@@ -67,11 +85,14 @@ document.addEventListener("DOMContentLoaded", function () {
         return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
 
-    // Update timer display
+    // Update timer display - now integrated into the game loop
     function updateTimer() {
         if (!gameActive) return;
-
-        timeLeft--;
+        
+        const currentTime = Date.now();
+        const elapsedSeconds = Math.floor((currentTime - gameStartTime - totalPausedTime) / 1000);
+        timeLeft = Math.max(0, gameTime - elapsedSeconds);
+        
         const timerDisplay = document.getElementById("timer");
         if (timerDisplay) {
             timerDisplay.textContent = formatTime(timeLeft);
@@ -81,17 +102,16 @@ document.addEventListener("DOMContentLoaded", function () {
             if (lives > 1) {
                 // Lose a life and reset the timer
                 loseLife();
-                timeLeft = gameTime; // Reset timer
+                // Reset timer by updating the start time
+                gameStartTime = currentTime - totalPausedTime;
                 if (timerDisplay) {
-                    timerDisplay.textContent = formatTime(timeLeft);
+                    timerDisplay.textContent = formatTime(gameTime);
                 }
             } else {
                 // Game over when out of lives
                 gameActive = false;
-                clearInterval(timerInterval);
                 handleGameOver();
             }
-            return;
         }
     }
 
@@ -103,8 +123,52 @@ document.addEventListener("DOMContentLoaded", function () {
             livesDisplay.textContent = lives;
         }
 
-        // Show life lost notification
-        showNotification(`Life Lost! ${lives} remaining`);
+        // Queue life lost notification
+        queueNotification(`Life Lost! ${lives} remaining`, "life");
+    }
+
+    // Add notification to queue
+    function queueNotification(message, type) {
+        notificationQueue.push({ message, type });
+    }
+
+    // Process notifications as part of the game loop
+    function processNotifications(deltaTime) {
+        // If there's an active notification, update its timer
+        if (currentNotification) {
+            notificationTimer += deltaTime;
+            
+            // Apply fade out effect at 75% of duration
+            if (notificationTimer > NOTIFICATION_DURATION * 0.75 && 
+                !notificationElement.classList.contains("fade-out")) {
+                notificationElement.classList.add("fade-out");
+            }
+            
+            // Hide notification when time expires
+            if (notificationTimer >= NOTIFICATION_DURATION) {
+                notificationElement.style.display = "none";
+                currentNotification = null;
+                notificationTimer = 0;
+                notificationElement.classList.remove("fade-out");
+            }
+        } 
+        // If no active notification and queue has items, show next
+        else if (notificationQueue.length > 0) {
+            currentNotification = notificationQueue.shift();
+            notificationElement.textContent = currentNotification.message;
+            
+            // Set appropriate class based on message type
+            notificationElement.classList.remove("level-up", "life-lost");
+            if (currentNotification.type === "level") {
+                notificationElement.classList.add("level-up");
+            } else {
+                notificationElement.classList.add("life-lost");
+            }
+            
+            notificationElement.style.display = "block";
+            notificationElement.classList.remove("fade-out");
+            notificationTimer = 0;
+        }
     }
 
     // Update level and game speed
@@ -125,42 +189,9 @@ document.addEventListener("DOMContentLoaded", function () {
             // Increase game speed by reducing drop interval
             dropInterval = Math.max(100, dropInterval - 50); // Min 100ms interval
 
-            // Show level up notification
-            showNotification(`Level Up! ${level}`);
+            // Queue level up notification
+            queueNotification(`Level Up! ${level}`, "level");
         }
-    }
-
-    // Show notification (for level up or life lost)
-    function showNotification(message) {
-        let notification = document.querySelector(".game-notification");
-
-        if (!notification) {
-            notification = document.createElement("div");
-            notification.className = "game-notification";
-            gameBoardElement.appendChild(notification); // Append to game board instead of body
-        }
-
-        notification.textContent = message;
-        notification.style.display = "block"; // Ensure it's visible
-
-        // Apply different styles based on message type
-        notification.classList.remove("level-up", "life-lost"); // Reset classes
-        if (message.includes("Level")) {
-            notification.classList.add("level-up");
-        } else {
-            notification.classList.add("life-lost");
-        }
-
-        // Remove any previous fade-out effect
-        notification.classList.remove("fade-out");
-
-        // Show the notification and fade out after 2 seconds
-        setTimeout(() => {
-            notification.classList.add("fade-out");
-            setTimeout(() => {
-                notification.style.display = "none";
-            }, 1000);
-        }, 1000);
     }
 
     // Process key states to reduce frame drops
@@ -193,17 +224,26 @@ document.addEventListener("DOMContentLoaded", function () {
             animationId = null;
         }
         
-        PauseMenu;
         gameActive = true;
         gameBoardElement.classList.add("started");
         renderTeromino(cells);
         console.log("Game started");
 
         // Reset timer, level, and lives
+        gameStartTime = Date.now();
+        totalPausedTime = 0;
+        pauseStartTime = 0;
         timeLeft = gameTime;
         level = 1;
         lives = 3;
         dropInterval = 500; // Reset drop interval
+
+        // Reset notification queue and state
+        notificationQueue = [];
+        currentNotification = null;
+        notificationTimer = 0;
+        notificationElement.style.display = "none";
+        notificationElement.classList.remove("fade-out");
 
         // Reset key states
         Object.keys(keyState).forEach(key => keyState[key] = false);
@@ -224,41 +264,49 @@ document.addEventListener("DOMContentLoaded", function () {
             livesDisplay.textContent = lives;
         }
 
-        // Start timer
-        clearInterval(timerInterval); // Clear any existing intervals
-        timerInterval = setInterval(updateTimer, 1000);
+        // Show pause button
+        const pauseBtn = document.getElementById("pauseBtn");
+        if (pauseBtn) {
+            pauseBtn.style.display = "block";
+            pauseBtn.textContent = "Pause";
+        }
 
-        // Initialize time tracking variables for frame rate handling
+        // Initialize time tracking variables for frame handling
         lastTime = performance.now();
         dropCounter = 0;
         
-        // Start the game loop - this is the only place where requestAnimationFrame is initiated
+        // Start the game loop
         animationId = requestAnimationFrame(gameLoop);
     };
 
     // Game loop function with frame drop handling and optimized key processing
     const gameLoop = (time = 0) => {
-        // Exit if game is not active - important for stopping the loop
+        // Exit if game is not active
         if (!gameActive) return;
 
-        // Calculate accurate time delta for smooth animation even with frame drops
+        // Calculate accurate time delta for smooth animation
         const deltaTime = time - lastTime;
         lastTime = time;
         
-        // Cap deltaTime to prevent huge jumps after tab switch or performance issues
-        // This helps handle frame drops more gracefully
+        // Cap deltaTime to prevent huge jumps
         const cappedDeltaTime = Math.min(deltaTime, 100);
         dropCounter += cappedDeltaTime;
 
-        // Process key states at controlled intervals to reduce frame drops
+        // Process key states at controlled intervals
         processKeyStates(time);
+        
+        // Process notification queue
+        processNotifications(cappedDeltaTime);
+        
+        // Update timer as part of the game loop
+        updateTimer();
 
         if (dropCounter > dropInterval) {
             const moveResult = moveDown(cells);
 
             // Check if the tetrimino can't move down anymore (collision)
             if (moveResult === false) {
-                // Check for game over condition (stack reached the top)
+                // Check for game over condition
                 const isGameOver = checkGameOver();
 
                 if (isGameOver) {
@@ -269,10 +317,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     } else {
                         // Game over when out of lives
                         gameActive = false;
-                        clearInterval(timerInterval);
                         loseLife();
                         handleGameOver();
-                        return; // Exit the game loop without requesting a new frame
+                        return; // Exit the game loop
                     }
                 }
             }
@@ -283,7 +330,6 @@ document.addEventListener("DOMContentLoaded", function () {
         // Check if we should update the level
         updateLevel();
 
-        // This is the ONLY place where requestAnimationFrame should be called
         // Only request a new frame if the game is still active
         if (gameActive) {
             animationId = requestAnimationFrame(gameLoop);
@@ -312,56 +358,108 @@ document.addEventListener("DOMContentLoaded", function () {
         renderTeromino(cells);
     }
 
-    initStartButton(startGame);
-
-    // Optimized event listeners for key presses to reduce frame drops
-    document.addEventListener("keydown", (event) => {
-        if (!gameActive) return; // Ignore keypresses if game is not active
-
-        // Prevent default action for game keys to avoid browser scrolling
-        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-            event.preventDefault();
-            
-            // Record key state instead of immediate execution
-            keyState[event.key] = true;
+    // Optimized pause handler
+    const handlePause = () => {
+        if (!gameActive) return; // Already paused
+        
+        gameActive = false;
+        pauseStartTime = Date.now(); // Record when we paused
+        
+        // Cancel the animation frame
+        if (animationId !== null) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
         }
-    });
-
-    // Key up listener to clear key states
-    document.addEventListener("keyup", (event) => {
-        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-            keyState[event.key] = false;
+        
+        // Show pause menu
+        document.getElementById("pauseMenu").style.display = "flex";
+        
+        // Update pause button text
+        const pauseBtn = document.getElementById("pauseBtn");
+        if (pauseBtn) {
+            pauseBtn.textContent = "Resume";
         }
-    });
+        
+        console.log("Game paused");
+    };
 
-    // Lose focus event handler to prevent stuck keys
-    window.addEventListener("blur", () => {
-        // Reset all key states when window loses focus
+    // Optimized resume handler
+    const handleResume = () => {
+        if (gameActive) return; // Already running
+        
+        // Hide pause menu
+        document.getElementById("pauseMenu").style.display = "none";
+        
+        // Update total paused time
+        if (pauseStartTime > 0) {
+            totalPausedTime += (Date.now() - pauseStartTime);
+            pauseStartTime = 0;
+        }
+        
+        // Reset for smooth animation
+        lastTime = performance.now();
+        dropCounter = 0;
+        
+        // Reset key states
         Object.keys(keyState).forEach(key => keyState[key] = false);
-    });
+        
+        // Update pause button text
+        const pauseBtn = document.getElementById("pauseBtn");
+        if (pauseBtn) {
+            pauseBtn.textContent = "Pause";
+        }
+        
+        gameActive = true;
+        animationId = requestAnimationFrame(gameLoop);
+        console.log("Game resumed");
+    };
+
+    // Initialize the pause button
+    function initializePauseButton() {
+        const pauseBtn = document.getElementById("pauseBtn");
+        if (!pauseBtn) return;
+        
+        // Clean up existing listeners by replacing with a clone
+        const newPauseBtn = pauseBtn.cloneNode(true);
+        pauseBtn.parentNode.replaceChild(newPauseBtn, pauseBtn);
+        
+        // Set up a single click listener that toggles between pause/resume
+        newPauseBtn.addEventListener("click", function() {
+            if (gameActive) {
+                handlePause();
+            } else {
+                handleResume();
+            }
+        });
+    }
+
+    // Initialize the start button
+    initStartButton(startGame);
+    
+    // Initialize pause button
+    initializePauseButton();
 
     // Function to handle game over
     function handleGameOver() {
         gameActive = false;
-        clearInterval(timerInterval);
         
-        // Cancel animation frame when game over
+        // Cancel animation frame
         if (animationId !== null) {
             cancelAnimationFrame(animationId);
             animationId = null;
         }
 
+        // Hide pause button
         const pauseButton = document.getElementById("pauseBtn");
         if (pauseButton) {
             pauseButton.style.display = "none";
         }
 
+        // Remove any existing game over screen
         let existingGameOver = document.querySelector(".game-over");
         if (existingGameOver) existingGameOver.remove();
         
-        // Fixed typo in display property
-        document.getElementById('pauseBtn').style.display = "none";
-        
+        // Create game over screen
         const gameOverDiv = document.createElement("div");
         gameOverDiv.className = "game-over";
         gameOverDiv.innerHTML = `
@@ -375,6 +473,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         gameBoardElement.appendChild(gameOverDiv);
 
+        // Add event listeners for game over buttons
         document.getElementById("gameOverRestartBtn").addEventListener("click", () => {
             gameOverDiv.remove();
             handleRestart();
@@ -397,8 +496,6 @@ document.addEventListener("DOMContentLoaded", function () {
             cancelAnimationFrame(animationId);
             animationId = null;
         }
-        
-        clearInterval(timerInterval); // Clear timer interval
 
         // Reset game board
         gameBoardElement.classList.remove("game-over");
@@ -407,6 +504,13 @@ document.addEventListener("DOMContentLoaded", function () {
             cell.style.backgroundColor = "";
         });
 
+        // Reset notification queue and state
+        notificationQueue = [];
+        currentNotification = null;
+        notificationTimer = 0;
+        notificationElement.style.display = "none";
+        notificationElement.classList.remove("fade-out");
+
         // Reset key states
         Object.keys(keyState).forEach(key => keyState[key] = false);
         lastKeyProcessed = 0;
@@ -414,36 +518,18 @@ document.addEventListener("DOMContentLoaded", function () {
         // Reset score, lines, timer, level, and lives
         document.getElementById("score").textContent = "0";
         document.getElementById("lines").textContent = "0";
-        timeLeft = gameTime;
         level = 1;
         lives = 3;
         dropInterval = 500; // Reset drop interval
 
-        // Update displays
-        const timerDisplay = document.getElementById("timer");
-        const levelDisplay = document.getElementById("level");
-        const livesDisplay = document.getElementById("lives");
-
-        if (timerDisplay) {
-            timerDisplay.textContent = formatTime(timeLeft);
-        }
-        if (levelDisplay) {
-            levelDisplay.textContent = level;
-        }
-        if (livesDisplay) {
-            livesDisplay.textContent = lives;
-        }
-
         // Hide pause menu
         document.getElementById("pauseMenu").style.display = "none";
 
-        // Get and reset the pause button - clean up event listeners
+        // Reset pause button
         const pauseBtn = document.getElementById("pauseBtn");
         if (pauseBtn) {
-            const newPauseBtn = pauseBtn.cloneNode(true);
-            pauseBtn.parentNode.replaceChild(newPauseBtn, pauseBtn);
-            newPauseBtn.textContent = "Pause";
-            newPauseBtn.style.display = "block";
+            pauseBtn.textContent = "Pause";
+            pauseBtn.style.display = "block";
         }
 
         // Clear the current tetrimino
@@ -452,11 +538,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Generate new Tetromino
         ChangeNextToCurrent();
 
-        // Create a new PauseMenu instance with fresh event handlers
-        const pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
-
-        // Restart the game by calling startGame (which will set up a single animation frame)
-        gameActive = true;
+        // Restart the game
         startGame();
     };
 
@@ -470,8 +552,13 @@ document.addEventListener("DOMContentLoaded", function () {
             cancelAnimationFrame(animationId);
             animationId = null;
         }
-        
-        clearInterval(timerInterval);
+
+        // Reset notification queue and state
+        notificationQueue = [];
+        currentNotification = null;
+        notificationTimer = 0;
+        notificationElement.style.display = "none";
+        notificationElement.classList.remove("fade-out");
 
         // Reset key states
         Object.keys(keyState).forEach(key => keyState[key] = false);
@@ -493,7 +580,6 @@ document.addEventListener("DOMContentLoaded", function () {
         // Reset score, lines, timer, level, and lives
         document.getElementById("score").textContent = "0";
         document.getElementById("lines").textContent = "0";
-        timeLeft = gameTime;
         level = 1;
         lives = 3;
         dropInterval = 500; // Reset drop interval
@@ -501,32 +587,28 @@ document.addEventListener("DOMContentLoaded", function () {
         // Reset other game state variables
         dropCounter = 0;
         lastTime = 0;
+        gameStartTime = 0;
+        totalPausedTime = 0;
+        pauseStartTime = 0;
 
-        // Get and reset the pause button
+        // Hide pause button
         const pauseBtn = document.getElementById("pauseBtn");
-
-        // Clean up any existing event listeners by cloning and replacing the button
         if (pauseBtn) {
-            const newPauseBtn = pauseBtn.cloneNode(true);
-            pauseBtn.parentNode.replaceChild(newPauseBtn, pauseBtn);
-            newPauseBtn.style.display = "none"; // Hide until game starts again
-            newPauseBtn.textContent = "Pause";
+            pauseBtn.style.display = "none";
         }
 
         // Show the start overlay again
         const startOverlay = document.getElementById("startOverlay");
-        startOverlay.style.display = "flex"; // Make sure it's visible
+        if (startOverlay) {
+            startOverlay.style.display = "flex";
+        }
 
-        // Create a new start callback that generates a fresh tetrimino before starting
+        // Create a new start callback
         const freshStartCallback = () => {
             eraseTetrimino(cells);
-            // Generate a new random tetrimino to start with
+            // Generate a new random tetrimino
             ChangeNextToCurrent();
-
-            // Reinitialize the pause menu with the new game state
-            const pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
-
-            // Start the game with fresh state (this will set up a single animation frame)
+            // Start the game
             startGame();
         };
 
@@ -534,43 +616,57 @@ document.addEventListener("DOMContentLoaded", function () {
         initStartButton(freshStartCallback);
     };
 
-    const handlePause = () => {
-        if (!gameActive) return; // Already paused
-        
-        gameActive = false;  // Stop the game loop
-        
-        // Cancel the animation frame when pausing
-        if (animationId !== null) {
-            cancelAnimationFrame(animationId);
-            animationId = null;
+    // Set up event listeners for keyboard controls
+    document.addEventListener("keydown", (event) => {
+        if (!gameActive) return; // Ignore keypresses if game is not active
+
+        // Prevent default action for game keys
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+            event.preventDefault();
+            // Record key state
+            keyState[event.key] = true;
         }
         
-        clearInterval(timerInterval); // Pause the timer
-        console.log("Game paused");
-    };
+        // Handle pause with spacebar
+        if (event.key === " " || event.key === "Escape") {
+            event.preventDefault();
+            if (gameActive) {
+                handlePause();
+            } else {
+                // Only resume if the pause menu is visible
+                if (document.getElementById("pauseMenu").style.display === "flex") {
+                    handleResume();
+                }
+            }
+        }
+    });
 
-    const handleResume = () => {
-        if (gameActive) return; // Already running
-        
-        gameActive = true;  // Resume the game loop
-        
-        // Reset time tracking to prevent large delta jumps when resuming
-        lastTime = performance.now();
-        
-        // Reset key states
+    // Key up listener to clear key states
+    document.addEventListener("keyup", (event) => {
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+            keyState[event.key] = false;
+        }
+    });
+
+    // Lose focus event handler to prevent stuck keys
+    window.addEventListener("blur", () => {
+        // Reset all key states when window loses focus
         Object.keys(keyState).forEach(key => keyState[key] = false);
-        lastKeyProcessed = 0;
         
-        // Start the game loop again with a single requestAnimationFrame
-        animationId = requestAnimationFrame(gameLoop);
-        
-        // Resume the timer
-        timerInterval = setInterval(updateTimer, 1000);
-        console.log("Game resumed");
-    };
+        // Automatically pause the game when window loses focus
+        if (gameActive) {
+            handlePause();
+        }
+    });
 
-    restartBtn.addEventListener("click", handleRestart);
-    quitBtn.addEventListener("click", handleQuit);
-    // Create PauseMenu instance
-    const pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
+    // Initialize the pause menu
+    pauseMenu = new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
+    
+    // Set up the restart and quit buttons
+    if (restartBtn) {
+        restartBtn.addEventListener("click", handleRestart);
+    }
+    if (quitBtn) {
+        quitBtn.addEventListener("click", handleQuit);
+    }
 });
