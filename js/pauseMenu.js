@@ -35,7 +35,7 @@ export class PauseMenu {
         console.log("Resetting pause state");
         this.isPaused = false;
         this.pauseMenu.style.display = "none";
-        this.pauseBtn.textContent = "Pause"; // ✅ Ensures the button resets after quitting
+        this.pauseBtn.textContent = "Pause"; // Ensures the button resets after quitting
     }
 
     initEvents() {
@@ -48,7 +48,7 @@ export class PauseMenu {
             console.log("Restart button clicked!");
             this.gameBoard.resetBoard();
 
-            // ✅ Only toggle pause if the game was actually paused
+            // Only toggle pause if the game was actually paused
             if (this.isPaused) {
                 this.togglePause();
             }
@@ -58,7 +58,7 @@ export class PauseMenu {
 
         this.quitBtn.addEventListener("click", () => {
             console.log("Quit button clicked!");
-            this.resetPauseState(); // ✅ Reset Pause state properly
+            this.resetPauseState(); // Reset Pause state properly
             this.gameBoard.resetBoard();
             this.onQuit();
         });
