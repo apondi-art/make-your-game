@@ -39,12 +39,8 @@ export const Score = (() => {
 
     return {
         addScore(lines) {
-            switch (lines) {
-                case 1: score += 40; break;
-                case 2: score += 100; break;
-                case 3: score += 300; break;
-                case 4: score += 1200; break;
-            }
+            const scoring = [0, 40, 100, 300, 1200]; 
+            score += scoring[lines] || (lines > 4 ? 1200 + (lines - 4) * 300 : 0); 
             linesCleared += lines;
             scheduleUpdate();
         },
