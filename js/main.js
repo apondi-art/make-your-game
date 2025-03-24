@@ -1,11 +1,12 @@
 import { GameBoard } from './gameBoard.js';
 import { PauseMenu } from './pauseMenu.js';
 import { initStartButton } from './start.js';
-import { renderTeromino, rotateTetrimino, moveDown, moveRight, moveLeft, currentTetrimino, ChangeNextToCurrent, eraseTetrimino } from './tetrominoes.js';
+import { renderTeromino, rotateTetrimino, moveTetrimino, currentTetrimino, ChangeNextToCurrent, updateCells } from './tetrominoes.js';
 
 let cells;
 let gameBoardElement;
 let lastTime = 0;
+const width = 10;
 let dropInterval = 500; // Variable to change with levels
 let dropCounter = 0;
 let gameActive = false;
@@ -201,16 +202,16 @@ document.addEventListener("DOMContentLoaded", function () {
         
         if (keyState.ArrowUp) {
             rotateTetrimino(cells);
-            keyState.ArrowUp = false; // Reset after processing
+            // keyState.ArrowUp = false; // Reset after processing
         }
         if (keyState.ArrowLeft) {
-            moveLeft(cells);
+            moveTetrimino(cells, -1);
         }
         if (keyState.ArrowRight) {
-            moveRight(cells);
+            moveTetrimino(cells, 1);
         }
         if (keyState.ArrowDown) {
-            moveDown(cells);
+            moveTetrimino(cells, width);
         }
         
         lastKeyProcessed = time;
@@ -304,7 +305,7 @@ document.addEventListener("DOMContentLoaded", function () {
         updateTimer();
 
         if (dropCounter > dropInterval) {
-            const moveResult = moveDown(cells);
+            const moveResult = moveTetrimino(cells, width);
 
             // Check if the tetrimino can't move down anymore (collision)
             if (moveResult === false) {
@@ -350,15 +351,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 cell.style.backgroundColor = "";
             }
         });
-
+    
         // Reset the current tetrimino
-        eraseTetrimino(cells);
-
+        updateCells(cells, false); 
+    
         // Generate a new tetrimino
         ChangeNextToCurrent();
         renderTeromino(cells);
     }
-
+    
     // Optimized pause handler
     const handlePause = () => {
         if (!gameActive) return; // Already paused
@@ -534,7 +535,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         // Clear the current tetrimino
-        eraseTetrimino(cells);
+        updateCells(cells, false);
 
         // Generate new Tetromino
         ChangeNextToCurrent();
@@ -606,7 +607,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Create a new start callback
         const freshStartCallback = () => {
-            eraseTetrimino(cells);
+            updateCells(cells, false);
             // Generate a new random tetrimino
             ChangeNextToCurrent();
             // Start the game
