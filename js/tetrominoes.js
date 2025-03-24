@@ -138,19 +138,26 @@ function lockTetrimino(cells) {
 
 export function moveTetrimino(cells, offset) {
     if (canMove(cells, offset)) {
-        // 1. Clear only the previous Tetromino's position
         updateCells(cells, false);  // Efficient clearing  
-
-        // 2. Move the Tetromino to the new position
         currentTetrimino.position += offset;
-
-        // 3. Render the new Tetromino position
         renderTeromino(cells);
+        return true;  // Move was successful
     } else if (offset === width) {
-        // Lock Tetromino if it hits the bottom
+        // Check if the piece is at the top when it locks
+        const isAtTop = currentTetrimino.position < width; 
+
         lockTetrimino(cells);
+        
+        if (isAtTop) {
+            return "gameOver"; // Signal game over
+        }
+
+        return null; // Indicate locking
+    } else {
+        return false; // Normal failure (e.g., hitting a wall)
     }
 }
+
 
 
 function clearFullRows(cells) {
