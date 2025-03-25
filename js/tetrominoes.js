@@ -145,16 +145,12 @@ export function moveTetrimino(cells, offset) {
     } else if (offset === width) {
         // Check if the piece is at the top when it locks
         const isAtTop = currentTetrimino.position < width; 
-
-        lockTetrimino(cells);
         
         if (isAtTop) {
-            return "gameOver"; // Signal game over
+            return false; // Signal game over
         }
-
-        return null; // Indicate locking
-    } else {
-        return false; // Normal failure (e.g., hitting a wall)
+        lockTetrimino(cells);
+        return true
     }
 }
 
