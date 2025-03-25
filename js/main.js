@@ -1,7 +1,7 @@
 import { GameBoard } from './gameBoard.js';
 import { PauseMenu } from './pauseMenu.js';
 import { initStartButton } from './start.js';
-import { renderTeromino, rotateTetrimino, moveTetrimino, currentTetrimino, ChangeNextToCurrent, updateCells } from './tetrominoes.js';
+import { renderTeromino, rotateTetrimino, moveTetrimino, currentTetrimino, ChangeNextToCurrent, updateCells, hardDrop } from './tetrominoes.js';
 
 let cells;
 let gameBoardElement;
@@ -202,16 +202,23 @@ document.addEventListener("DOMContentLoaded", function () {
         
         if (keyState.ArrowUp) {
             rotateTetrimino(cells);
-            // keyState.ArrowUp = false; // Reset after processing
+            keyState.ArrowUp = false; // Reset after processing
         }
         if (keyState.ArrowLeft) {
             moveTetrimino(cells, -1);
+            keyState.ArrowLeft = false;
         }
         if (keyState.ArrowRight) {
             moveTetrimino(cells, 1);
+            keyState.ArrowRight = false;
         }
         if (keyState.ArrowDown) {
-            moveTetrimino(cells, width);
+            let moveResult = moveTetrimino(cells, 0, 1); 
+            if (!moveResult) {
+                keyState.ArrowDown = false; 
+            }
+            hardDrop(cells);
+            keyState.ArrowDown = false;
         }
         
         lastKeyProcessed = time;
@@ -306,7 +313,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (dropCounter > dropInterval) {
             const moveResult = moveTetrimino(cells, width);
-
             // Check if the tetrimino can't move down anymore (collision)
             if (moveResult === false) {
                 // Check for game over condition
