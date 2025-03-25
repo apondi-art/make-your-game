@@ -143,15 +143,32 @@ export function moveTetrimino(cells, offset) {
         renderTeromino(cells);
         return true;  // Move was successful
     } else if (offset === width) {
-        // Check if the piece is at the top when it locks
-        const isAtTop = currentTetrimino.position < width; 
-        
-        if (isAtTop) {
-            return false; // Signal game over
+        if (!canMove(cells, 0)) {
+            return false; 
         }
         lockTetrimino(cells);
         return true
     }
+}
+
+
+export function hardDrop(cells) {
+    let dropDistance = 0;
+    
+    // Find the lowest available position
+    while (canMove(cells, (dropDistance + 1) * width)) {
+        dropDistance++;
+    }
+
+    // If we can drop, update position directly
+    if (dropDistance > 0) {
+        updateCells(cells, false); // Clear old position
+        currentTetrimino.position += dropDistance * width;
+        renderTeromino(cells);
+    }
+
+    // Lock immediately
+    lockTetrimino(cells);
 }
 
 
