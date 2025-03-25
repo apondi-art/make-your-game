@@ -317,6 +317,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         // Lose a life and reset the board
                         loseLife();
                         resetBoard();
+                    } else {
                         // Game over when out of lives
                         gameActive = false;
                         loseLife();
