@@ -99,6 +99,11 @@ export class GameStateManager {
     
     loseLife() {
         this.lives--;
+        const livesDisplay = document.getElementById("lives");
+        if (livesDisplay) {
+            livesDisplay.textContent = this.lives;
+        }
+
         this.queueNotification(`Life Lost! ${this.lives} remaining`, "life");
     }
     
