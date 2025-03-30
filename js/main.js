@@ -305,29 +305,44 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function handleQuit() {
-        gameState.gameActive = false;
-
+        console.log("Game quit");
+    
+        // Reset all game state
+        gameState.resetAll();
+        
+        // Cancel any active animation frame
         if (gameState.animationId !== null) {
             cancelAnimationFrame(gameState.animationId);
             gameState.animationId = null;
         }
-
+    
+        // Hide UI elements
+        document.getElementById("pauseMenu").style.display = "none";
         gameBoardElement.classList.remove("started", "game-over");
+    
+        // Clear all cells
         gameState.cells.forEach(cell => {
             cell.className = "cell";
             cell.style.backgroundColor = "";
         });
-
+    
+        // Reset score displays
         document.getElementById("score").textContent = "0";
         document.getElementById("lines").textContent = "0";
-
+    
+        // Hide pause button and show start overlay
         const pauseBtn = document.getElementById("pauseBtn");
         if (pauseBtn) pauseBtn.style.display = "none";
-
+    
         const startOverlay = document.getElementById("startOverlay");
         if (startOverlay) startOverlay.style.display = "flex";
-
-        initStartButton(startGame);
+    
+        // Prepare fresh start callback
+        initStartButton(() => {
+            updateCells(gameState.cells, false);
+            ChangeNextToCurrent();
+            startGame();
+        });
     }
 
     // Initialize UI
