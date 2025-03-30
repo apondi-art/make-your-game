@@ -124,6 +124,35 @@ export class GameStateManager {
         Object.keys(this.keyState).forEach(key => this.keyState[key] = false);
         this.gameActive = true;
     }
+    // In GameStateManager class
+resetAll() {
+    this.gameActive = false;
+    
+    // Reset game state variables
+    this.level = 1;
+    this.lives = 3;
+    this.dropInterval = 500;
+    this.timeLeft = this.gameTime;
+    
+    // Reset timing variables
+    this.dropCounter = 0;
+    this.lastTime = 0;
+    this.gameStartTime = 0;
+    this.totalPausedTime = 0;
+    this.pauseStartTime = 0;
+    
+    // Reset notification system
+    this.notificationQueue = [];
+    this.currentNotification = null;
+    this.notificationTimer = 0;
+    
+    // Reset key states
+    this.clearKeyStates();
+    this.lastKeyProcessed = 0;
+    
+    // Update UI displays if they exist
+    this.updateDisplays();
+}
     
     clearKeyStates() {
         Object.keys(this.keyState).forEach(key => this.keyState[key] = false);
