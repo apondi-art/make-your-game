@@ -12,9 +12,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const restartBtn = document.getElementById("restartBtn");
     const quitBtn = document.getElementById("quitBtn");
     const cells = Array.from(document.querySelectorAll(".cell"));
-    
+
     gameState.initialize(cells, gameBoardElement);
-    
+
     // Add timer, level, and lives displays
     const scoreBoard = document.querySelector(".score-board");
     if (scoreBoard) {
@@ -35,11 +35,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateTimer() {
         if (!gameState.gameActive) return;
-        
+
         const currentTime = Date.now();
         const elapsedSeconds = Math.floor((currentTime - gameState.gameStartTime - gameState.totalPausedTime) / 1000);
         gameState.timeLeft = Math.max(0, gameState.gameTime - elapsedSeconds);
-        
+
         const timerDisplay = document.getElementById("timer");
         if (timerDisplay) {
             timerDisplay.textContent = gameState.formatTime(gameState.timeLeft);
@@ -62,12 +62,12 @@ document.addEventListener("DOMContentLoaded", function () {
     function processNotifications(deltaTime) {
         if (gameState.currentNotification) {
             gameState.notificationTimer += deltaTime;
-            
-            if (gameState.notificationTimer > gameState.NOTIFICATION_DURATION * 0.75 && 
+
+            if (gameState.notificationTimer > gameState.NOTIFICATION_DURATION * 0.75 &&
                 !gameState.notificationElement.classList.contains("fade-out")) {
                 gameState.notificationElement.classList.add("fade-out");
             }
-            
+
             if (gameState.notificationTimer >= gameState.NOTIFICATION_DURATION) {
                 gameState.notificationElement.style.display = "none";
                 gameState.currentNotification = null;
@@ -77,14 +77,14 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (gameState.notificationQueue.length > 0) {
             gameState.currentNotification = gameState.notificationQueue.shift();
             gameState.notificationElement.textContent = gameState.currentNotification.message;
-            
+
             gameState.notificationElement.classList.remove("level-up", "life-lost");
             if (gameState.currentNotification.type === "level") {
                 gameState.notificationElement.classList.add("level-up");
             } else {
                 gameState.notificationElement.classList.add("life-lost");
             }
-            
+
             gameState.notificationElement.style.display = "block";
             gameState.notificationElement.classList.remove("fade-out");
             gameState.notificationTimer = 0;
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function processKeyStates(time) {
         if (time - gameState.lastKeyProcessed < gameState.KEY_PROCESS_INTERVAL) return;
-        
+
         if (gameState.keyState.ArrowUp) {
             rotateTetrimino(gameState.cells);
             gameState.keyState.ArrowUp = false;
@@ -122,10 +122,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         if (gameState.keyState.ArrowDown) {
             const moveResult = moveTetrimino(gameState.cells, 0, 1);
-            if (!moveResult) hardDrop(gameState.cells);
+            if (!moveResult) {
+
+                gameState.keyState.ArrowDown = false;
+            };
+            hardDrop(gameState.cells);
             gameState.keyState.ArrowDown = false;
         }
-        
+
         gameState.lastKeyProcessed = time;
     }
 
@@ -134,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
             requestAnimationFrame(gameLoop);
             return;
         }
-        
+
         gameState.resetForNewGame();
         gameBoardElement.classList.add("started");
         renderTeromino(gameState.cells);
@@ -153,10 +157,10 @@ document.addEventListener("DOMContentLoaded", function () {
             requestAnimationFrame(gameLoop);
             return;
         }
-        
+
         const deltaTime = time - gameState.lastTime;
         gameState.lastTime = time;
-        
+
         const cappedDeltaTime = Math.min(deltaTime, 16);
         gameState.dropCounter += cappedDeltaTime;
 
@@ -225,11 +229,11 @@ document.addEventListener("DOMContentLoaded", function () {
     function initializePauseButton() {
         const pauseBtn = document.getElementById("pauseBtn");
         if (!pauseBtn) return;
-        
+
         const newPauseBtn = pauseBtn.cloneNode(true);
         pauseBtn.parentNode.replaceChild(newPauseBtn, pauseBtn);
-        
-        newPauseBtn.addEventListener("click", function() {
+
+        newPauseBtn.addEventListener("click", function () {
             if (gameState.gameActive) handlePause();
             else handleResume();
         });
@@ -237,14 +241,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function handleGameOver() {
         gameState.gameActive = false;
-        
+
         if (gameState.animationId !== null) {
             cancelAnimationFrame(gameState.animationId);
             gameState.animationId = null;
         }
 
         const pauseButton = document.getElementById("pauseBtn");
-        if (pauseButton) pauseButton.style.display = "none";
+        if (pauseButton) {
+            pauseButton.style.display = "none";
+
+        }
+        // Remove any existing game over screen
+        let existingGameOver = document.querySelector(".game-over");
+        if (existingGameOver) existingGameOver.remove();
+
 
         const gameOverDiv = document.createElement("div");
         gameOverDiv.className = "game-over";
@@ -259,8 +270,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         gameBoardElement.appendChild(gameOverDiv);
 
-        document.getElementById("gameOverRestartBtn").addEventListener("click", handleRestart);
-        document.getElementById("gameOverquitBtn").addEventListener("click", handleQuit);
+        document.getElementById("gameOverRestartBtn").addEventListener("click", () => {
+            gameOverDiv.remove();
+            handleRestart();
+        });
+
+        document.getElementById("gameOverquitBtn").addEventListener("click", () => {
+            gameOverDiv.remove();
+            handleQuit();
+        });
+;
     }
 
     function handleRestart() {
@@ -287,7 +306,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function handleQuit() {
         gameState.gameActive = false;
-        
+
         if (gameState.animationId !== null) {
             cancelAnimationFrame(gameState.animationId);
             gameState.animationId = null;
@@ -323,7 +342,7 @@ document.addEventListener("DOMContentLoaded", function () {
             event.preventDefault();
             gameState.keyState[event.key] = true;
         }
-        
+
         if (event.key === " " || event.key === "Escape") {
             event.preventDefault();
             if (gameState.gameActive) handlePause();
@@ -344,7 +363,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Initialize pause menu
     new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
-    
+
     if (restartBtn) restartBtn.addEventListener("click", handleRestart);
     if (quitBtn) quitBtn.addEventListener("click", handleQuit);
 });
