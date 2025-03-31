@@ -152,45 +152,100 @@ document.addEventListener("DOMContentLoaded", function () {
         gameState.animationId = requestAnimationFrame(gameLoop);
     };
 
-    const gameLoop = (time = 0) => {
-        if (!gameState.gameActive) {
-            requestAnimationFrame(gameLoop);
-            return;
+// In main.js
+const OPTIMAL_FRAME_TIME = 16; // Target 60fps (1000ms/60 ≈ 16ms)
+const MAX_FRAME_TIME = 32; // Don't exceed 32ms per frame (≈30fps min)
+
+const gameLoop = (time = 0) => {
+    if (!gameState.gameActive) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    // Calculate delta time with safety caps
+    const deltaTime = Math.min(time - gameState.lastTime, MAX_FRAME_TIME);
+    gameState.lastTime = time;
+
+    // Split processing into phases with time budgeting
+    processInputPhase(deltaTime);
+    updatePhase(deltaTime);
+    renderPhase();
+
+    if (gameState.gameActive) {
+        gameState.animationId = requestAnimationFrame(gameLoop);
+    }
+};
+
+// Phase 1: Input Processing (should be fastest)
+function processInputPhase(deltaTime) {
+    const start = performance.now();
+    
+    // Process keyboard input
+    processKeyStates(gameState.lastTime);
+    
+    // Budget: Don't spend more than 4ms on input
+    if (performance.now() - start > 4) {
+        console.warn("Input phase taking too long");
+    }
+}
+
+// Phase 2: Game State Updates
+function updatePhase(deltaTime) {
+    const start = performance.now();
+    const timeBudget = OPTIMAL_FRAME_TIME - 4; // Reserve 4ms for input
+    
+    // 1. Process timed updates (drop counter)
+    gameState.dropCounter += deltaTime;
+    if (gameState.dropCounter > gameState.dropInterval) {
+        if (!processMovement()) {
+            return; // Game over handled
         }
+        gameState.dropCounter = 0;
+    }
+    
+    // 2. Process notifications
+    processNotifications(deltaTime);
+    
+    // 3. Update timer and level
+    updateTimer();
+    updateLevel();
+    
+    // Budget check
+    if (performance.now() - start > timeBudget) {
+        console.warn("Update phase exceeding budget");
+    }
+}
 
-        const deltaTime = time - gameState.lastTime;
-        gameState.lastTime = time;
+// Phase 3: Rendering (should get remaining frame time)
+function renderPhase() {
+    const start = performance.now();
+    
+    // All rendering operations here
+    renderTeromino(gameState.cells);
+    
+    // Budget check
+    if (performance.now() - start > 8) {
+        console.warn("Render phase taking too long");
+    }
+}
 
-        const cappedDeltaTime = Math.min(deltaTime, 16);
-        gameState.dropCounter += cappedDeltaTime;
-
-        processKeyStates(time);
-        processNotifications(cappedDeltaTime);
-        updateTimer();
-
-        if (gameState.dropCounter > gameState.dropInterval) {
-            const moveResult = moveTetrimino(gameState.cells, gameState.width);
-            if (moveResult === false) {
-                if (checkGameOver()) {
-                    if (gameState.lives > 1) {
-                        gameState.loseLife();
-                        resetBoard();
-                    } else {
-                        gameState.gameActive = false;
-                        handleGameOver();
-                        return;
-                    }
-                }
+// Helper function for movement processing
+function processMovement() {
+    const moveResult = moveTetrimino(gameState.cells, gameState.width);
+    if (moveResult === false) {
+        if (checkGameOver()) {
+            if (gameState.lives > 1) {
+                gameState.loseLife();
+                resetBoard();
+            } else {
+                gameState.gameActive = false;
+                handleGameOver();
+                return false;
             }
-            gameState.dropCounter = 0;
         }
-
-        updateLevel();
-
-        if (gameState.gameActive) {
-            gameState.animationId = requestAnimationFrame(gameLoop);
-        }
-    };
+    }
+    return true;
+}
 
     function checkGameOver() {
         const topRowCells = gameState.cells.slice(0, 30);
