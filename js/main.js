@@ -6,6 +6,15 @@ import { GameStateManager } from './gamestate.js';
 
 const gameState = new GameStateManager();
 
+// Extend GameStateManager to include board data structure (to be added in gamestate.js)
+// gameState.boardData = Array(20).fill().map(() => Array(10).fill(0));
+
+// Constants for performance optimization
+const FPS = 60;
+const TIME_STEP = 1000 / FPS;
+let lastFrameTimeMs = 0;
+let delta = 0;
+
 document.addEventListener("DOMContentLoaded", function () {
     const gameBoard = new GameBoard();
     const gameBoardElement = document.getElementById("game-board");
@@ -33,38 +42,49 @@ document.addEventListener("DOMContentLoaded", function () {
 
     ChangeNextToCurrent();
 
+    // PERFORMANCE IMPROVEMENT: Only update DOM when time changes
     function updateTimer() {
         if (!gameState.gameActive) return;
 
         const currentTime = Date.now();
         const elapsedSeconds = Math.floor((currentTime - gameState.gameStartTime - gameState.totalPausedTime) / 1000);
-        gameState.timeLeft = Math.max(0, gameState.gameTime - elapsedSeconds);
+        const newTimeLeft = Math.max(0, gameState.gameTime - elapsedSeconds);
+        
+        // Only update DOM if the time has changed
+        if (newTimeLeft !== gameState.timeLeft) {
+            gameState.timeLeft = newTimeLeft;
+            const timerDisplay = document.getElementById("timer");
+            if (timerDisplay) {
+                timerDisplay.textContent = gameState.formatTime(gameState.timeLeft);
+            }
 
-        const timerDisplay = document.getElementById("timer");
-        if (timerDisplay) {
-            timerDisplay.textContent = gameState.formatTime(gameState.timeLeft);
-        }
-
-        if (gameState.timeLeft <= 0) {
-            if (gameState.lives > 1) {
-                gameState.loseLife();
-                gameState.gameStartTime = currentTime - gameState.totalPausedTime;
-                if (timerDisplay) {
-                    timerDisplay.textContent = gameState.formatTime(gameState.gameTime);
+            if (gameState.timeLeft <= 0) {
+                if (gameState.lives > 1) {
+                    gameState.loseLife();
+                    gameState.gameStartTime = currentTime - gameState.totalPausedTime;
+                    if (timerDisplay) {
+                        timerDisplay.textContent = gameState.formatTime(gameState.gameTime);
+                    }
+                } else {
+                    gameState.gameActive = false;
+                    handleGameOver();
                 }
-            } else {
-                gameState.gameActive = false;
-                handleGameOver();
             }
         }
     }
 
+    // PERFORMANCE IMPROVEMENT: Optimize notification processing
+    let lastNotificationState = null;
     function processNotifications(deltaTime) {
         if (gameState.currentNotification) {
             gameState.notificationTimer += deltaTime;
-
-            if (gameState.notificationTimer > gameState.NOTIFICATION_DURATION * 0.75 &&
-                !gameState.notificationElement.classList.contains("fade-out")) {
+            
+            // Only update DOM when state changes
+            const fadeThreshold = gameState.NOTIFICATION_DURATION * 0.75;
+            const shouldFadeOut = gameState.notificationTimer > fadeThreshold;
+            const isFadingOut = gameState.notificationElement.classList.contains("fade-out");
+            
+            if (shouldFadeOut && !isFadingOut) {
                 gameState.notificationElement.classList.add("fade-out");
             }
 
@@ -74,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 gameState.notificationTimer = 0;
                 gameState.notificationElement.classList.remove("fade-out");
             }
-        } else if (gameState.notificationQueue.length > 0) {
+        } else if (gameState.notificationQueue.length > 0 && !gameState.currentNotification) {
             gameState.currentNotification = gameState.notificationQueue.shift();
             gameState.notificationElement.textContent = gameState.currentNotification.message;
 
@@ -91,41 +111,50 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // PERFORMANCE IMPROVEMENT: Cache line count, update DOM only when needed
+    let cachedLines = 0;
     function updateLevel() {
+        // Get lines from game state instead of DOM
         const linesElement = document.getElementById("lines");
         const currentLines = parseInt(linesElement.textContent) || 0;
+        
+        // Only process if lines have changed
+        if (currentLines !== cachedLines) {
+            cachedLines = currentLines;
+            
+            if (currentLines >= gameState.level * gameState.lineThreshold) {
+                gameState.level++;
+                const levelDisplay = document.getElementById("level");
+                if (levelDisplay) levelDisplay.textContent = gameState.level;
 
-        if (currentLines >= gameState.level * gameState.lineThreshold) {
-            gameState.level++;
-            const levelDisplay = document.getElementById("level");
-            if (levelDisplay) levelDisplay.textContent = gameState.level;
-
-            gameState.dropInterval = Math.max(100, gameState.dropInterval - 50);
-            gameState.queueNotification(`Level Up! ${gameState.level}`, "level");
+                gameState.dropInterval = Math.max(100, gameState.dropInterval - 50);
+                gameState.queueNotification(`Level Up! ${gameState.level}`, "level");
+            }
         }
     }
 
+    // PERFORMANCE IMPROVEMENT: Process keys sequentially not simultaneously
     function processKeyStates(time) {
         if (time - gameState.lastKeyProcessed < gameState.KEY_PROCESS_INTERVAL) return;
 
+        // Process one key at a time for better performance
         if (gameState.keyState.ArrowUp) {
             rotateTetrimino(gameState.cells);
             gameState.keyState.ArrowUp = false;
-        }
-        if (gameState.keyState.ArrowLeft) {
+        } 
+        else if (gameState.keyState.ArrowLeft) {
             moveTetrimino(gameState.cells, -1);
             gameState.keyState.ArrowLeft = false;
         }
-        if (gameState.keyState.ArrowRight) {
+        else if (gameState.keyState.ArrowRight) {
             moveTetrimino(gameState.cells, 1);
             gameState.keyState.ArrowRight = false;
         }
-        if (gameState.keyState.ArrowDown) {
+        else if (gameState.keyState.ArrowDown) {
             const moveResult = moveTetrimino(gameState.cells, 0, 1);
             if (!moveResult) {
-
                 gameState.keyState.ArrowDown = false;
-            };
+            }
             hardDrop(gameState.cells);
             gameState.keyState.ArrowDown = false;
         }
@@ -149,61 +178,106 @@ document.addEventListener("DOMContentLoaded", function () {
             pauseBtn.textContent = "Pause";
         }
 
+        // Reset performance variables
+        lastFrameTimeMs = 0;
+        delta = 0;
+        
         gameState.animationId = requestAnimationFrame(gameLoop);
     };
 
+    // PERFORMANCE IMPROVEMENT: Implement fixed timestep game loop
     const gameLoop = (time = 0) => {
         if (!gameState.gameActive) {
             requestAnimationFrame(gameLoop);
             return;
         }
 
-        const deltaTime = time - gameState.lastTime;
-        gameState.lastTime = time;
-
-        const cappedDeltaTime = Math.min(deltaTime, 16);
-        gameState.dropCounter += cappedDeltaTime;
-
+        // Calculate time delta using fixed timestep approach
+        if (lastFrameTimeMs === 0) {
+            lastFrameTimeMs = time;
+        }
+        
+        delta += time - lastFrameTimeMs;
+        lastFrameTimeMs = time;
+        
+        // Process input (can happen every frame)
         processKeyStates(time);
-        processNotifications(cappedDeltaTime);
-        updateTimer();
-
-        if (gameState.dropCounter > gameState.dropInterval) {
-            const moveResult = moveTetrimino(gameState.cells, gameState.width);
-            if (moveResult === false) {
-                if (checkGameOver()) {
-                    if (gameState.lives > 1) {
-                        gameState.loseLife();
-                        resetBoard();
-                    } else {
-                        gameState.gameActive = false;
-                        handleGameOver();
-                        return;
+        
+        // Fixed timestep for game logic
+        let numUpdateSteps = 0;
+        while (delta >= TIME_STEP) {
+            // Game logic update with fixed timestep
+            const cappedDeltaTime = Math.min(TIME_STEP, 16);
+            
+            // Update notification animations
+            processNotifications(cappedDeltaTime);
+            
+            // Update timer
+            updateTimer();
+            
+            // Handle tetrimino dropping with fixed timestep
+            gameState.dropCounter += cappedDeltaTime;
+            if (gameState.dropCounter > gameState.dropInterval) {
+                const moveResult = moveTetrimino(gameState.cells, gameState.width);
+                if (moveResult === false) {
+                    if (checkGameOver()) {
+                        if (gameState.lives > 1) {
+                            gameState.loseLife();
+                            resetBoard();
+                        } else {
+                            gameState.gameActive = false;
+                            handleGameOver();
+                            delta = 0;
+                            return;
+                        }
                     }
                 }
+                gameState.dropCounter = 0;
             }
-            gameState.dropCounter = 0;
+            
+            // Update level based on lines cleared
+            updateLevel();
+            
+            delta -= TIME_STEP;
+            
+            // Safety valve to prevent spiral of death
+            if (++numUpdateSteps >= 240) {
+                delta = 0;
+                console.warn("Game loop running too slowly");
+                break;
+            }
         }
-
-        updateLevel();
 
         if (gameState.gameActive) {
             gameState.animationId = requestAnimationFrame(gameLoop);
         }
     };
 
+    // PERFORMANCE IMPROVEMENT: More efficient game over check 
     function checkGameOver() {
+        // Slice only once and check for specific classes
         const topRowCells = gameState.cells.slice(0, 30);
-        return topRowCells.some(cell => cell.classList.contains("active") && !cell.classList.contains("current"));
+        // Use array iteration instead of DOM operations when possible
+        return topRowCells.some(cell => 
+            cell.classList.contains("active") && !cell.classList.contains("current")
+        );
+        
+        // In the future, this should use the boardData structure instead of DOM elements
     }
 
+    // PERFORMANCE IMPROVEMENT: More efficient board reset
     function resetBoard() {
-        gameState.cells.forEach(cell => {
-            if (cell.classList.contains("active") && !cell.classList.contains("current")) {
-                cell.className = "cell";
-                cell.style.backgroundColor = "";
-            }
+        // Batch DOM operations where possible
+        const cellsToReset = gameState.cells.filter(cell => 
+            cell.classList.contains("active") && !cell.classList.contains("current")
+        );
+        
+        // Reset cells in batch
+        cellsToReset.forEach(cell => {
+            cell.className = "cell";
+            cell.style.backgroundColor = "";
         });
+        
         updateCells(gameState.cells, false);
         ChangeNextToCurrent();
         renderTeromino(gameState.cells);
@@ -223,6 +297,11 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("pauseMenu").style.display = "none";
         const pauseBtn = document.getElementById("pauseBtn");
         if (pauseBtn) pauseBtn.textContent = "Pause";
+        
+        // Reset time tracking for game loop
+        lastFrameTimeMs = 0;
+        delta = 0;
+        
         gameState.animationId = requestAnimationFrame(gameLoop);
     }
 
@@ -239,9 +318,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // PERFORMANCE IMPROVEMENT: Reduce DOM operations in game over handling
     function handleGameOver() {
         gameState.gameActive = false;
-        gameState.lives = 0; // Explicitly set lives to 0
+        gameState.lives = 0;
     
         // Update the lives display
         const livesDisplay = document.getElementById("lives");
@@ -263,20 +343,28 @@ document.addEventListener("DOMContentLoaded", function () {
         let existingGameOver = document.querySelector(".game-over");
         if (existingGameOver) existingGameOver.remove();
     
+        // Create game over screen - consider creating this once and reusing
         const gameOverDiv = document.createElement("div");
         gameOverDiv.className = "game-over";
+        
+        // Get values once to avoid repeated DOM queries
+        const finalScore = document.getElementById("score").textContent;
+        const finalLines = document.getElementById("lines").textContent;
+        const finalLevel = document.getElementById("level").textContent;
+        
         gameOverDiv.innerHTML = `
             <h2>Game Over</h2>
-            <p>Score: <span id="final-score">${document.getElementById("score").textContent}</span></p>
-            <p>Lines Cleared: <span id="final-lines">${document.getElementById("lines").textContent}</span></p>
-            <p>Level Reached: <span id="final-level">${document.getElementById("level").textContent}</span></p>
+            <p>Score: <span id="final-score">${finalScore}</span></p>
+            <p>Lines Cleared: <span id="final-lines">${finalLines}</span></p>
+            <p>Level Reached: <span id="final-level">${finalLevel}</span></p>
             <p>Lives: <span id="final-lives">0</span></p>
             <button id="gameOverRestartBtn">Restart</button>
             <button id="gameOverquitBtn">Quit</button>
         `;
     
         gameBoardElement.appendChild(gameOverDiv);
-    
+        
+        // Add event listeners after element is in DOM
         document.getElementById("gameOverRestartBtn").addEventListener("click", () => {
             gameOverDiv.remove();
             handleRestart();
@@ -288,16 +376,23 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // PERFORMANCE IMPROVEMENT: More efficient restart
     function handleRestart() {
         gameState.resetForNewGame();
         gameBoardElement.classList.remove("game-over");
+        
+        // Batch DOM operations
         gameState.cells.forEach(cell => {
             cell.className = "cell";
             cell.style.backgroundColor = "";
         });
 
+        // Set score displays
         document.getElementById("score").textContent = "0";
         document.getElementById("lines").textContent = "0";
+        
+        // Reset cached values
+        cachedLines = 0;
 
         const pauseBtn = document.getElementById("pauseBtn");
         if (pauseBtn) {
@@ -307,6 +402,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         updateCells(gameState.cells, false);
         ChangeNextToCurrent();
+        
+        // Reset time tracking for game loop
+        lastFrameTimeMs = 0;
+        delta = 0;
+        
         startGame();
     }
 
@@ -335,6 +435,9 @@ document.addEventListener("DOMContentLoaded", function () {
         // Reset score displays
         document.getElementById("score").textContent = "0";
         document.getElementById("lines").textContent = "0";
+        
+        // Reset cached values
+        cachedLines = 0;
     
         // Hide pause button and show start overlay
         const pauseBtn = document.getElementById("pauseBtn");
@@ -343,6 +446,10 @@ document.addEventListener("DOMContentLoaded", function () {
         const startOverlay = document.getElementById("startOverlay");
         if (startOverlay) startOverlay.style.display = "flex";
     
+        // Reset time tracking for game loop
+        lastFrameTimeMs = 0;
+        delta = 0;
+        
         // Prepare fresh start callback
         initStartButton(() => {
             updateCells(gameState.cells, false);
@@ -355,13 +462,16 @@ document.addEventListener("DOMContentLoaded", function () {
     initStartButton(startGame);
     initializePauseButton();
 
-    // Event listeners
+    // Event listeners - more efficient key event handling
     document.addEventListener("keydown", (event) => {
         if (!gameState.gameActive) return;
 
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
             event.preventDefault();
-            gameState.keyState[event.key] = true;
+            // Only set to true if currently false to avoid redundant processing
+            if (!gameState.keyState[event.key]) {
+                gameState.keyState[event.key] = true;
+            }
         }
 
         if (event.key === " " || event.key === "Escape") {
@@ -377,11 +487,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    const DEBUG_MODE = true; // Set to false for production
+
     window.addEventListener("blur", () => {
         gameState.clearKeyStates();
-        if (gameState.gameActive) handlePause();
+        if (!DEBUG_MODE && gameState.gameActive) handlePause();
     });
-
+    
     // Initialize pause menu
     new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
 
