@@ -377,14 +377,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    const DEBUG_MODE = true; // Set to false for production
     window.addEventListener("blur", () => {
         gameState.clearKeyStates();
-        if (gameState.gameActive) handlePause();
+        if (!DEBUG_MODE && gameState.gameActive) handlePause();
     });
-
+    
     // Initialize pause menu
     new PauseMenu(gameBoard, handleRestart, handleQuit, handlePause, handleResume);
-
     if (restartBtn) restartBtn.addEventListener("click", handleRestart);
     if (quitBtn) quitBtn.addEventListener("click", handleQuit);
 });
