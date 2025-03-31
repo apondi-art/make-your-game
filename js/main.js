@@ -241,22 +241,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function handleGameOver() {
         gameState.gameActive = false;
-
+        gameState.lives = 0; // Explicitly set lives to 0
+    
+        // Update the lives display
+        const livesDisplay = document.getElementById("lives");
+        if (livesDisplay) {
+            livesDisplay.textContent = gameState.lives;
+        }
+    
         if (gameState.animationId !== null) {
             cancelAnimationFrame(gameState.animationId);
             gameState.animationId = null;
         }
-
+    
         const pauseButton = document.getElementById("pauseBtn");
         if (pauseButton) {
             pauseButton.style.display = "none";
-
         }
+    
         // Remove any existing game over screen
         let existingGameOver = document.querySelector(".game-over");
         if (existingGameOver) existingGameOver.remove();
-
-
+    
         const gameOverDiv = document.createElement("div");
         gameOverDiv.className = "game-over";
         gameOverDiv.innerHTML = `
@@ -264,22 +270,22 @@ document.addEventListener("DOMContentLoaded", function () {
             <p>Score: <span id="final-score">${document.getElementById("score").textContent}</span></p>
             <p>Lines Cleared: <span id="final-lines">${document.getElementById("lines").textContent}</span></p>
             <p>Level Reached: <span id="final-level">${document.getElementById("level").textContent}</span></p>
+            <p>Lives: <span id="final-lives">0</span></p>
             <button id="gameOverRestartBtn">Restart</button>
             <button id="gameOverquitBtn">Quit</button>
         `;
-
+    
         gameBoardElement.appendChild(gameOverDiv);
-
+    
         document.getElementById("gameOverRestartBtn").addEventListener("click", () => {
             gameOverDiv.remove();
             handleRestart();
         });
-
+    
         document.getElementById("gameOverquitBtn").addEventListener("click", () => {
             gameOverDiv.remove();
             handleQuit();
         });
-;
     }
 
     function handleRestart() {
