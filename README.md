@@ -22,7 +22,8 @@ This project is a Tetris-inspired game built using only plain JavaScript and HTM
     Line clearing & level progression
 
 ## Game Mechanics & Functionality
- Controls
+Controls
+
 Arrow Up → Rotate the TetrominoArrow 
    
 Arrow Left → Move the Tetromino left
