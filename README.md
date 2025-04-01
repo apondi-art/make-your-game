@@ -23,10 +23,17 @@ This project is a Tetris-inspired game built using only plain JavaScript and HTM
 
 ## Game Mechanics & Functionality
  Controls
-   Arrow Up → Rotate the TetrominoArrow Left → Move left
-    Arrow Right → Move right
-    Arrow Down → Soft drop
-    Pause Button → Pause the game
+Arrow Up → Rotate the TetrominoArrow 
+   
+Arrow Left → Move the Tetromino left
+
+Arrow Right → Move right
+
+Arrow Down → Soft drop
+
+Space → Hard drop
+    
+Pause Button or P → Pause the game
 
 -  Game Flow
 
