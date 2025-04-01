@@ -39,6 +39,7 @@ export class InputManager {
         // Button event listeners
         document.getElementById('startButton').addEventListener('click', () => {
             document.getElementById('startOverlay').style.display = 'none';
+            document.getElementById('controllers').style.display = 'flex';
             this.gameLoop.start();
         });
         
