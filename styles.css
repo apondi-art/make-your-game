@@ -123,7 +123,11 @@ button:hover {
 button:active {
     transform: translateY(0);
 }
-
+#controllers {
+    display: none;
+    flex-direction: column; 
+    gap: 15px; 
+}
 #game-over,
 #pause {
     position: fixed;
