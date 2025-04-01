@@ -5,35 +5,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tetris</title>
-    <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <div class="game-container">
-        <div id="game-board" class="board"> <!-- Removed started class from here -->
-            <div id="startOverlay" class="start-overlay">
-                <button id="startBtn">Start</button>
-            </div>
-            <div id="pauseMenu" class="pause-menu">
-                <div class="pause-content">
-                    <button id="restartBtn">Restart</button>
-                    <button id="quitBtn">Quit</button>
-                </div>
+        <div class="board-container">
+            <div id="game-board"></div>
+            <div id="startOverlay">
+                <h2>Tetris Game</h2>
+                <button id="startButton">Start Game</button>
             </div>
         </div>
-        <div class="sidebar">
-            <div class="score-board">
-                <div>Score: <span id="score"></span></div>
-                <div>Lines: <span id="lines"></span></div>
-            </div>
-            <div id="previewContainer">
-                <p>Next Piece</p>
-                <div id="nextPiece"></div>
+
+        <div class="side-panel">
+            <div class="panel">
+                <h3>Next</h3>
+                <div id="preview"></div>
             </div>
 
-            <button id="pauseBtn">Pause</button>
+            <div class="panel">
+                <h3>Score</h3>
+                <div id="score">0</div>
+            </div>
+
+            <div class="panel">
+                <h3>Lines</h3>
+                <div id="lines">0</div>
+            </div>
+
+            <div class="panel">
+                <h3>Level</h3>
+                <div id="level">1</div>
+            </div>
+
+            <div class="panel">
+                <h3>Lives</h3>
+                <div id="lives">3</div>
+            </div>
+
+            <div class="panel">
+                <h3>Time</h3>
+                <div id="timer">03:00</div>
+            </div>
+
+            <button id="pause-btn">Pause</button>
+            <button id="restart-btn">Restart</button>
+            <button id="quit-btn">Quit</button>
         </div>
     </div>
+
+    <div id="game-over" class="modal">
+        <div class="modal-content">
+            <h2>Game Over</h2>
+            <p>Score: <span id="final-score">0</span></p>
+            <p>Lines: <span id="final-lines">0</span></p>
+            <p>Level: <span id="final-level">1</span></p>
+            <p>Lives: <span id="final-lives">0</span></p>
+            <button id="gameOverRestartBtn">Restart</button>
+            <button id="gameOverQuitBtn">Quit</button>
+        </div>
+    </div>
+
+    <div id="pause" class="modal">
+        <div class="modal-content">
+            <h2>Paused</h2>
+            <p>Press P or ESC to resume</p>
+            <button id="resume-btn">Resume</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/gameState.js"></script>
+    <script type="module" src="js/gameLoop.js"></script>
+    <script type="module" src="js/renderer.js"></script>
+    <script type="module" src="js/inputManager.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 
